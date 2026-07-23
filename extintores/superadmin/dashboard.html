@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Riesgos Cero</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }</style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <script>
+        const rol = localStorage.getItem('usuario_rol');
+        if (!rol || rol !== 'super_admin') { window.location.href = "../index.html"; }
+    </script>
+
+    <nav class="bg-slate-900 text-white p-4 shadow-md flex justify-between items-center border-b-4 border-[#10b981]">
+        <div class="flex items-center gap-3">
+            <div class="bg-[#10b981] text-slate-900 p-2 rounded-lg"><i class="ph-bold ph-globe-hemisphere-west text-2xl"></i></div>
+            <div>
+                <h1 class="font-black text-xl tracking-tight leading-none">Riesgos Cero SaaS</h1>
+                <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Master Dashboard</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="nombre-admin" class="text-sm font-bold text-slate-300"></span>
+            <button onclick="cerrarSesion()" class="bg-slate-800 hover:bg-red-600 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                <i class="ph-bold ph-sign-out"></i> Salir
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 mt-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+            <div>
+                <h2 class="text-2xl font-black text-slate-900">Gestión Global de Usuarios</h2>
+                <p class="text-sm text-slate-500 font-medium mt-1">Directorio de clientes, administradores y técnicos en campo.</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="abrirModalEmpresa()" class="bg-[#1e3a8a] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-[#0f172a] flex items-center gap-2 transition">
+                    <i class="ph-bold ph-buildings"></i> Nueva Empresa
+                </button>
+                <button onclick="abrirModal()" class="bg-[#10b981] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-600 flex items-center gap-2 transition">
+                    <i class="ph-bold ph-user-plus"></i> Registrar Usuario
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-widest text-slate-500">
+                            <th class="p-4 font-black">Nombre / Email</th>
+                            <th class="p-4 font-black">Empresa (Cliente)</th>
+                            <th class="p-4 font-black">Rol de Acceso</th>
+                            <th class="p-4 font-black">Estatus</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-usuarios" class="text-sm font-medium divide-y divide-slate-100">
+                        <tr><td colspan="4" class="p-8 text-center text-slate-400">Cargando base de datos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-empresa" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-slate-900">Registrar Cliente</h3>
+                <button onclick="cerrarModalEmpresa()" class="text-slate-400 hover:text-red-500 transition"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form onsubmit="event.preventDefault(); guardarEmpresa();" class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Nombre Comercial (Marca)</label>
+                    <input type="text" id="emp-nombre" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold" required>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Razón Social (Legal)</label>
+                    <input type="text" id="emp-razon" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold" required>
+                </div>
+                <p id="mensaje-empresa" class="text-xs font-bold text-center mt-2"></p>
+                <button type="submit" id="btnGuardarEmp" class="w-full bg-[#1e3a8a] text-white font-black py-3 rounded-xl hover:bg-[#0f172a] transition shadow-sm mt-4">GUARDAR EMPRESA</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-registro" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-slate-900">Nuevo Usuario</h3>
+                <button onclick="cerrarModal()" class="text-slate-400 hover:text-red-500 transition"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form id="formRegistro" onsubmit="event.preventDefault(); guardarUsuario();" class="space-y-4">
+                <div><label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Nombre Completo</label><input type="text" id="reg-nombre" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold" required></div>
+                <div><label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Correo Electrónico</label><input type="email" id="reg-email" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold" required></div>
+                <div><label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Contraseña</label><input type="text" id="reg-password" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold" required></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Rol</label>
+                        <select id="reg-rol" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-xs font-bold text-slate-700">
+                            <option value="tecnico">Técnico (App)</option>
+                            <option value="admin_empresa">Admin. Empresa</option>
+                            <option value="super_admin">Super Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Empresa</label>
+                        <select id="reg-empresa" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-xs font-bold text-slate-700"></select>
+                    </div>
+                </div>
+                <p id="mensaje-modal" class="text-xs font-bold text-center mt-2"></p>
+                <button type="submit" id="btnGuardarUser" class="w-full bg-[#10b981] text-white font-black py-3 rounded-xl hover:bg-emerald-600 transition shadow-sm mt-4">CREAR USUARIO</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('nombre-admin').innerText = localStorage.getItem('usuario_nombre') || 'Super Admin';
+        function cerrarSesion() { localStorage.clear(); window.location.href = "../index.html"; }
+
+        // MÓDULO TABLA GLOBAL
+        async function cargarUsuarios() {
+            const tbody = document.getElementById('tabla-usuarios');
+            try {
+                const respuesta = await fetch(`../api/obtener_usuarios_global.php`);
+                const data = await respuesta.json();
+                if (data.error || data.datos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center font-bold text-slate-400">No hay usuarios registrados.</td></tr>'; return;
+                }
+                tbody.innerHTML = '';
+                data.datos.forEach(usr => {
+                    let rolBadge = "";
+                    if(usr.rol === 'super_admin') rolBadge = `<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-[10px] font-black uppercase">Super Admin</span>`;
+                    else if(usr.rol === 'admin_empresa') rolBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-black uppercase">Admin</span>`;
+                    else rolBadge = `<span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-[10px] font-black uppercase">Técnico</span>`;
+
+                    let estatusBadge = usr.estatus === 'Activo' ? `<span class="text-emerald-600 font-bold">Activo</span>` : `<span class="text-red-500 font-bold">Inactivo</span>`;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="p-4"><span class="block font-black text-slate-900">${usr.nombre}</span><span class="text-xs text-slate-500">${usr.email}</span></td>
+                            <td class="p-4 text-slate-700 font-bold">${usr.nombre_comercial || 'Riesgos Cero (Interno)'}</td>
+                            <td class="p-4">${rolBadge}</td>
+                            <td class="p-4 text-xs">${estatusBadge}</td>
+                        </tr>
+                    `;
+                });
+            } catch (error) { tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center font-bold text-red-500">Error de conexión.</td></tr>'; }
+        }
+
+        // MÓDULO EMPRESA
+        function abrirModalEmpresa() { document.getElementById('modal-empresa').classList.remove('hidden'); }
+        function cerrarModalEmpresa() { document.getElementById('modal-empresa').classList.add('hidden'); document.getElementById('mensaje-empresa').innerText = ""; }
+        
+        async function guardarEmpresa() {
+            const btn = document.getElementById('btnGuardarEmp');
+            const msj = document.getElementById('mensaje-empresa');
+            btn.disabled = true; btn.innerHTML = "Guardando..."; msj.innerText = "";
+            const payload = {
+                nombre_comercial: document.getElementById('emp-nombre').value,
+                razon_social: document.getElementById('emp-razon').value
+            };
+            try {
+                const res = await fetch('../api/registrar_empresa.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (data.error) { msj.innerText = data.mensaje; msj.style.color = "red"; } 
+                else { 
+                    msj.innerText = "¡Empresa Creada!"; msj.style.color = "green";
+                    setTimeout(() => { cerrarModalEmpresa(); document.getElementById('emp-nombre').value=''; document.getElementById('emp-razon').value=''; }, 1500);
+                }
+            } catch (e) { msj.innerText = "Error."; msj.style.color = "red"; }
+            finally { btn.disabled = false; btn.innerHTML = "GUARDAR EMPRESA"; }
+        }
+
+        // MÓDULO USUARIOS
+        function abrirModal() { document.getElementById('modal-registro').classList.remove('hidden'); cargarEmpresas(); }
+        function cerrarModal() { document.getElementById('modal-registro').classList.add('hidden'); document.getElementById('formRegistro').reset(); document.getElementById('mensaje-modal').innerText = ""; }
+
+        async function cargarEmpresas() {
+            const select = document.getElementById('reg-empresa');
+            select.innerHTML = '<option value="">Cargando...</option>';
+            try {
+                const res = await fetch('../api/obtener_empresas.php');
+                const data = await res.json();
+                select.innerHTML = '<option value="">(Ninguna)</option>';
+                if(!data.error) data.datos.forEach(emp => { select.innerHTML += `<option value="${emp.id}">${emp.nombre_comercial}</option>`; });
+            } catch (e) { select.innerHTML = '<option value="">Error</option>'; }
+        }
+
+        async function guardarUsuario() {
+            const btn = document.getElementById('btnGuardarUser');
+            const msj = document.getElementById('mensaje-modal');
+            btn.disabled = true; btn.innerHTML = "Guardando..."; msj.innerText = "";
+            const payload = {
+                nombre: document.getElementById('reg-nombre').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value,
+                rol: document.getElementById('reg-rol').value,
+                empresa_id: document.getElementById('reg-empresa').value
+            };
+            try {
+                const respuesta = await fetch('../api/registrar_usuario.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await respuesta.json();
+                if (data.error) { msj.innerText = data.mensaje; msj.style.color = "red"; } 
+                else { msj.innerText = "¡Usuario Creado!"; msj.style.color = "green"; setTimeout(() => { cerrarModal(); cargarUsuarios(); }, 1500); }
+            } catch (error) { msj.innerText = "Error."; msj.style.color = "red"; } 
+            finally { btn.disabled = false; btn.innerHTML = "CREAR USUARIO"; }
+        }
+
+        // Iniciar tabla
+        cargarUsuarios();
+    </script>
+</body>
+</html>
