@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Master - Riesgos Cero</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; overflow: hidden; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased flex h-screen">
+
+    <!-- MENÚ LATERAL -->
+    <aside class="w-64 bg-[#1e1b4b] text-white flex flex-col hidden md:flex flex-shrink-0 shadow-2xl z-30 relative overflow-hidden">
+        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-indigo-500 opacity-20 blur-2xl"></div>
+        <div class="h-20 flex items-center gap-3 px-6 border-b border-indigo-900/50 relative z-10">
+            <div class="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg"><i class="ph-bold ph-crown text-xl text-white"></i></div>
+            <div>
+                <h1 class="font-black text-lg tracking-tight leading-none text-white">SaaS Master</h1>
+                <p class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">Nivel 4 / Dios</p>
+            </div>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2 relative z-10">
+            <button onclick="cambiarVista('vista-talleres', this)" class="nav-btn w-full flex items-center gap-3 bg-indigo-600 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-sm transition"><i class="ph-bold ph-buildings text-lg"></i> Franquicias / Talleres</button>
+            <button onclick="cambiarVista('vista-finanzas', this); cargarFinanzas();" class="nav-btn w-full flex items-center gap-3 text-indigo-200 hover:text-white hover:bg-indigo-900/50 px-4 py-3 rounded-xl font-bold text-sm transition"><i class="ph-bold ph-credit-card text-lg"></i> Finanzas y Cobranza</button>
+        </nav>
+        <div class="p-4 border-t border-indigo-900/50 relative z-10">
+            <button onclick="cerrarSesion()" class="w-full text-left text-indigo-300 hover:text-red-400 px-4 py-2 font-bold text-sm transition flex items-center gap-3"><i class="ph-bold ph-power text-lg"></i> Cerrar Sesión</button>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0 bg-slate-50">
+        
+        <!-- ========================================================= -->
+        <!-- VISTA 1: TALLERES (INQUILINOS) -->
+        <!-- ========================================================= -->
+        <main id="vista-talleres" class="seccion-app flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+            <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0">
+                <h2 class="text-xl font-black text-slate-800">Administración de Inquilinos B2B</h2>
+                <button onclick="abrirModalTaller()" class="bg-[#1e1b4b] text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg hover:bg-indigo-900 flex items-center gap-2 tracking-widest uppercase transition-transform active:scale-95">
+                    <i class="ph-bold ph-plus"></i> Nuevo Taller
+                </button>
+            </header>
+            
+            <div class="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+                <!-- KPIs Talleres -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 border-l-4 border-l-indigo-600">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-storefront text-2xl"></i></div>
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Talleres</p><h3 class="text-3xl font-black text-slate-800" id="kpi-total">0</h3></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 border-l-4 border-l-emerald-500">
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-check-circle text-2xl"></i></div>
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Activos (Pagados)</p><h3 class="text-3xl font-black text-slate-800" id="kpi-activos">0</h3></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 border-l-4 border-l-red-500">
+                        <div class="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-prohibit text-2xl"></i></div>
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suspendidos</p><h3 class="text-3xl font-black text-slate-800" id="kpi-suspendidos">0</h3></div>
+                    </div>
+                </div>
+
+                <!-- Tabla Talleres -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-black text-slate-800 text-sm uppercase tracking-wider">Cartera de Suscriptores</h3>
+                        <button onclick="cargarTalleres()" class="text-slate-400 hover:text-indigo-600"><i class="ph-bold ph-arrows-clockwise text-xl"></i></button>
+                    </div>
+                    <div class="overflow-x-auto max-h-[60vh] custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-white z-10 shadow-sm">
+                                <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-200">
+                                    <th class="p-4 font-black">ID / Taller</th>
+                                    <th class="p-4 font-black text-center">Plan Actual</th>
+                                    <th class="p-4 font-black text-center">Estatus</th>
+                                    <th class="p-4 font-black text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-talleres" class="text-sm font-medium divide-y divide-slate-100">
+                                <tr><td colspan="4" class="p-8 text-center text-slate-400 font-bold">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========================================================= -->
+        <!-- VISTA 2: FINANZAS Y COBRANZA -->
+        <!-- ========================================================= -->
+        <main id="vista-finanzas" class="seccion-app hidden flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+            <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0">
+                <h2 class="text-xl font-black text-slate-800">Control de Ingresos</h2>
+                <button onclick="abrirModalPago()" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg hover:bg-emerald-700 flex items-center gap-2 tracking-widest uppercase transition-transform active:scale-95">
+                    <i class="ph-bold ph-currency-dollar"></i> Registrar Pago
+                </button>
+            </header>
+            
+            <div class="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+                <!-- KPI Financiero -->
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex items-center justify-between bg-gradient-to-r from-indigo-900 to-indigo-700 text-white">
+                    <div>
+                        <p class="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">Total Ingresos Registrados</p>
+                        <h3 class="text-4xl font-black" id="kpi-ingresos-total">$0.00 <span class="text-lg font-bold text-indigo-300">MXN</span></h3>
+                    </div>
+                    <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center"><i class="ph-fill ph-chart-line-up text-3xl text-emerald-400"></i></div>
+                </div>
+
+                <!-- Tabla de Pagos -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50">
+                        <h3 class="font-black text-slate-800 text-sm uppercase tracking-wider">Historial de Pagos Recientes</h3>
+                    </div>
+                    <div class="overflow-x-auto max-h-[60vh] custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-white z-10 shadow-sm">
+                                <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-200">
+                                    <th class="p-4 font-black">Fecha</th>
+                                    <th class="p-4 font-black">Taller</th>
+                                    <th class="p-4 font-black">Método / Ref</th>
+                                    <th class="p-4 font-black text-right">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-finanzas" class="text-sm font-medium divide-y divide-slate-100">
+                                <tr><td colspan="4" class="p-8 text-center text-slate-400 font-bold">Cargando finanzas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL REGISTRO NUEVO TALLER (Oculto) -->
+    <!-- (Se mantiene exactamente igual) -->
+    <div id="modal-taller" class="fixed inset-0 bg-indigo-900/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 border-4 border-white">
+            <div class="flex justify-between items-center mb-6">
+                <div><h3 class="text-xl font-black text-slate-900">Dar de alta Taller</h3></div>
+                <button onclick="cerrarModalTaller()" class="text-slate-400 hover:text-red-500"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <form id="formTaller" onsubmit="event.preventDefault(); guardarTaller();" class="space-y-4">
+                <input type="text" id="reg-nombre-taller" placeholder="Nombre Comercial del Taller" class="w-full p-3 bg-slate-50 border rounded-xl text-sm font-bold" required>
+                <div class="border-t border-slate-100 pt-4"><label class="text-[10px] font-black text-slate-400 uppercase block mb-3 text-center">Datos del Dueño (Login)</label></div>
+                <input type="text" id="reg-admin-nombre" placeholder="Nombre completo" class="w-full p-3 bg-slate-50 border rounded-xl text-xs font-bold" required>
+                <input type="email" id="reg-admin-email" placeholder="Correo electrónico" class="w-full p-3 bg-slate-50 border rounded-xl text-xs font-bold" required>
+                <input type="password" id="reg-admin-pass" placeholder="Contraseña de acceso" class="w-full p-3 bg-slate-50 border rounded-xl text-xs font-bold" required>
+                <p id="mensaje-modal" class="text-xs font-bold text-center mt-2"></p>
+                <button type="submit" id="btnGuardarTaller" class="w-full bg-[#1e1b4b] text-white font-black py-4 rounded-xl mt-4">DESPLEGAR NUEVO SISTEMA</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GESTIÓN DE SUSCRIPCIÓN -->
+    <div id="modal-gestion" class="fixed inset-0 bg-indigo-900/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl p-8 border-4 border-white">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <div>
+                    <h3 class="text-2xl font-black text-slate-900 tracking-tight" id="gest-nombre-taller">Nombre Taller</h3>
+                    <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mt-1">Expediente de Inquilino</p>
+                </div>
+                <button onclick="document.getElementById('modal-gestion').classList.add('hidden')" class="text-slate-400 hover:text-red-500 bg-slate-100 p-2 rounded-full"><i class="ph-bold ph-x"></i></button>
+            </div>
+            
+            <form id="formSuscripcion" onsubmit="event.preventDefault(); guardarSuscripcion();" class="space-y-4">
+                <input type="hidden" id="gest-taller-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Plan de Suscripción</label>
+                        <select id="gest-plan" class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:border-indigo-500">
+                            <option value="Prueba Gratuita">Prueba Gratuita</option>
+                            <option value="Básico">Básico</option>
+                            <option value="Pro">Pro</option>
+                            <option value="Enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Día de Próximo Pago</label>
+                        <input type="date" id="gest-fecha-pago" class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-4 pt-4 border-t border-slate-100">
+                    <button type="button" id="btnSuspender" class="w-1/3 bg-red-50 text-red-600 border border-red-200 font-black py-3 rounded-xl hover:bg-red-100 transition text-xs">SUSPENDER</button>
+                    <button type="submit" id="btnGuardarSub" class="w-2/3 bg-indigo-600 text-white font-black py-3 rounded-xl hover:bg-indigo-700 transition text-xs">GUARDAR CAMBIOS</button>
+                </div>
+                <p id="msj-gestion" class="text-[10px] font-bold text-center mt-2"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- NUEVO MODAL: REGISTRAR PAGO -->
+    <div id="modal-pago" class="fixed inset-0 bg-indigo-900/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 border-4 border-white">
+            <div class="flex justify-between items-center mb-6">
+                <div><h3 class="text-xl font-black text-slate-900">Registrar Pago</h3></div>
+                <button onclick="cerrarModalPago()" class="text-slate-400 hover:text-red-500"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <form id="formPago" onsubmit="event.preventDefault(); registrarPagoFinal();" class="space-y-4">
+                
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Selecciona el Taller</label>
+                    <select id="pago-taller-id" class="w-full p-3 bg-slate-50 border rounded-xl text-sm font-bold" required></select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Monto (MXN)</label>
+                        <input type="number" id="pago-monto" placeholder="Ej. 1500" class="w-full p-3 bg-slate-50 border rounded-xl text-sm font-bold" required>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Método</label>
+                        <select id="pago-metodo" class="w-full p-3 bg-slate-50 border rounded-xl text-sm font-bold" required>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Tarjeta">Tarjeta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">Nueva Fecha de Corte</label>
+                    <input type="date" id="pago-nueva-fecha" class="w-full p-3 bg-slate-50 border rounded-xl text-sm font-bold" required>
+                    <p class="text-[9px] text-slate-400 mt-1">El sistema actualizará el corte de este cliente automáticamente.</p>
+                </div>
+
+                <p id="msj-pago" class="text-xs font-bold text-center mt-2"></p>
+                <button type="submit" id="btnGuardarPago" class="w-full bg-emerald-600 text-white font-black py-4 rounded-xl mt-4 hover:bg-emerald-700 transition shadow-lg">GUARDAR PAGO</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (localStorage.getItem('usuario_rol') !== 'super_admin' && localStorage.getItem('usuario_rol') !== 'superadmin') {
+                window.location.replace('../index.html'); return;
+            }
+            cargarTalleres();
+        });
+
+        async function cerrarSesion() { 
+            try { await fetch('../api/logout.php'); } catch(e) {}
+            localStorage.clear(); 
+            window.location.replace("../index.html"); 
+        }
+        
+        // NAVEGACIÓN ENTRE VISTAS
+        function cambiarVista(idVista, btnActivo) {
+            document.querySelectorAll('.seccion-app').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(idVista).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = "nav-btn w-full flex items-center gap-3 text-indigo-200 hover:text-white hover:bg-indigo-900/50 px-4 py-3 rounded-xl font-bold text-sm transition";
+            });
+            btnActivo.className = "nav-btn w-full flex items-center gap-3 bg-indigo-600 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-sm transition";
+        }
+
+        let memoriaTalleres = []; 
+
+        async function cargarTalleres() {
+            const tbody = document.getElementById('tabla-talleres');
+            try {
+                const res = await fetch(`../api/obtener_talleres.php`);
+                const data = await res.json();
+                
+                if (data.error || data.datos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400 font-bold">No hay talleres registrados.</td></tr>'; return;
+                }
+
+                memoriaTalleres = data.datos;
+                let tActivos = 0; let tSuspendidos = 0;
+                let selectTalleres = '<option value="">-- Selecciona --</option>';
+
+                tbody.innerHTML = data.datos.map(taller => {
+                    let esActivo = taller.estatus === 'Activo';
+                    if (esActivo) tActivos++; else tSuspendidos++;
+                    
+                    if(taller.id != 0) { selectTalleres += `<option value="${taller.id}">${taller.nombre}</option>`; }
+
+                    let badgeEstatus = esActivo ? '<span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">Activo</span>' : '<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">Suspendido</span>';
+                    let btnGestion = taller.id == 0 ? '<span class="text-[10px] text-slate-300 font-bold">SISTEMA MAESTRO</span>' : `<button onclick="abrirGestion(${taller.id})" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-xs font-black hover:bg-indigo-100 shadow-sm border border-indigo-200 transition">ADMINISTRAR</button>`;
+
+                    return `
+                    <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">
+                        <td class="p-4"><span class="font-black text-indigo-900 block">${taller.nombre}</span><span class="text-[9px] text-slate-400 font-bold tracking-widest uppercase">ID: ${taller.id}</span></td>
+                        <td class="p-4 text-center"><span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-[10px] font-black uppercase">${taller.plan_suscripcion || 'Básico'}</span></td>
+                        <td class="p-4 text-center">${badgeEstatus}</td>
+                        <td class="p-4 text-center">${btnGestion}</td>
+                    </tr>`;
+                }).join('');
+
+                document.getElementById('kpi-total').innerText = data.datos.length;
+                document.getElementById('kpi-activos').innerText = tActivos;
+                document.getElementById('kpi-suspendidos').innerText = tSuspendidos;
+                
+                const selectElem = document.getElementById('pago-taller-id');
+                if(selectElem) selectElem.innerHTML = selectTalleres;
+
+            } catch (error) {}
+        }
+
+        // ==========================================
+        // FINANZAS Y COBRANZA
+        // ==========================================
+        async function cargarFinanzas() {
+            const tbody = document.getElementById('tabla-finanzas');
+            try {
+                const res = await fetch(`../api/master_obtener_finanzas.php`);
+                const data = await res.json();
+                
+                if (data.error || data.pagos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400 font-bold">Aún no hay ingresos registrados.</td></tr>'; 
+                    document.getElementById('kpi-ingresos-total').innerHTML = `$0.00 <span class="text-lg font-bold text-indigo-300">MXN</span>`;
+                    return;
+                }
+
+                let totalAcumulado = 0;
+                tbody.innerHTML = data.pagos.map(p => {
+                    totalAcumulado += parseFloat(p.monto);
+                    return `
+                    <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">
+                        <td class="p-4 text-xs font-bold text-slate-500">${p.fecha_pago}</td>
+                        <td class="p-4 font-black text-indigo-900">${p.nombre_taller}</td>
+                        <td class="p-4 text-xs font-bold text-slate-500">${p.metodo_pago}</td>
+                        <td class="p-4 text-right font-black text-emerald-600">$${parseFloat(p.monto).toFixed(2)}</td>
+                    </tr>`;
+                }).join('');
+
+                document.getElementById('kpi-ingresos-total').innerHTML = `$${totalAcumulado.toLocaleString('en-US', {minimumFractionDigits: 2})} <span class="text-lg font-bold text-indigo-300">MXN</span>`;
+            } catch (error) {}
+        }
+
+        function abrirModalPago() { document.getElementById('formPago').reset(); document.getElementById('modal-pago').classList.remove('hidden'); }
+        function cerrarModalPago() { document.getElementById('modal-pago').classList.add('hidden'); }
+
+        async function registrarPagoFinal() {
+            const btn = document.getElementById('btnGuardarPago');
+            const msj = document.getElementById('msj-pago');
+            btn.disabled = true; btn.innerText = "GUARDANDO...";
+            
+            const payload = {
+                taller_id: document.getElementById('pago-taller-id').value,
+                monto: document.getElementById('pago-monto').value,
+                metodo: document.getElementById('pago-metodo').value,
+                nueva_fecha: document.getElementById('pago-nueva-fecha').value
+            };
+
+            try {
+                const res = await fetch('../api/master_registrar_pago.php', { method: 'POST', body: JSON.stringify(payload) });
+                const data = await res.json();
+                if(!data.error) {
+                    cerrarModalPago();
+                    cargarFinanzas(); // Recarga la tabla de pagos
+                    cargarTalleres(); // Recarga la tabla principal por si cambió la fecha de corte
+                } else { msj.innerText = data.mensaje; msj.style.color = "red"; }
+            } catch(e) { msj.innerText = "Error de conexión."; msj.style.color = "red"; }
+            finally { btn.disabled = false; btn.innerText = "GUARDAR PAGO"; }
+        }
+
+        // ==========================================
+        // RESTO DE FUNCIONES (MODALES DE TALLER)
+        // ==========================================
+        function abrirModalTaller() { document.getElementById('modal-taller').classList.remove('hidden'); }
+        function cerrarModalTaller() { document.getElementById('modal-taller').classList.add('hidden'); document.getElementById('formTaller').reset(); }
+        
+        function abrirGestion(idTaller) {
+            const taller = memoriaTalleres.find(t => t.id === idTaller);
+            if(!taller) return;
+            document.getElementById('gest-taller-id').value = taller.id;
+            document.getElementById('gest-nombre-taller').innerText = taller.nombre;
+            document.getElementById('gest-plan').value = taller.plan_suscripcion || 'Básico';
+            document.getElementById('gest-fecha-pago').value = taller.fecha_proximo_pago || '';
+            
+            const btnSuspender = document.getElementById('btnSuspender');
+            if(taller.estatus === 'Activo') {
+                btnSuspender.innerText = 'SUSPENDER';
+                btnSuspender.className = 'w-1/3 bg-red-50 text-red-600 border border-red-200 font-black py-3 rounded-xl hover:bg-red-100 transition text-xs';
+                btnSuspender.onclick = () => cambiarEstatus(taller.id, 'Suspendido');
+            } else {
+                btnSuspender.innerText = 'REACTIVAR';
+                btnSuspender.className = 'w-1/3 bg-emerald-50 text-emerald-600 border border-emerald-200 font-black py-3 rounded-xl hover:bg-emerald-100 transition text-xs';
+                btnSuspender.onclick = () => cambiarEstatus(taller.id, 'Activo');
+            }
+            document.getElementById('msj-gestion').innerText = '';
+            document.getElementById('modal-gestion').classList.remove('hidden');
+        }
+
+        async function guardarSuscripcion() {
+            const btn = document.getElementById('btnGuardarSub'); const msj = document.getElementById('msj-gestion');
+            btn.disabled = true; btn.innerText = 'GUARDANDO...';
+            try {
+                const res = await fetch('../api/actualizar_suscripcion.php', { method: 'POST', body: JSON.stringify({ taller_id: document.getElementById('gest-taller-id').value, plan_suscripcion: document.getElementById('gest-plan').value, fecha_proximo_pago: document.getElementById('gest-fecha-pago').value }) });
+                const data = await res.json();
+                if(!data.error) { cargarTalleres(); document.getElementById('modal-gestion').classList.add('hidden'); } else { msj.innerText = data.mensaje; msj.style.color = 'red'; }
+            } catch(e) {} finally { btn.disabled = false; btn.innerText = 'GUARDAR CAMBIOS'; }
+        }
+
+        async function guardarTaller() {
+            try {
+                const res = await fetch('../api/crear_taller.php', { method: 'POST', body: JSON.stringify({ nombre_taller: document.getElementById('reg-nombre-taller').value, admin_nombre: document.getElementById('reg-admin-nombre').value, admin_email: document.getElementById('reg-admin-email').value, admin_pass: document.getElementById('reg-admin-pass').value }) });
+                const data = await res.json();
+                if (!data.error) { cargarTalleres(); cerrarModalTaller(); } else { alert(data.mensaje); }
+            } catch (err) {}
+        }
+
+        async function cambiarEstatus(idTaller, nuevoEstatus) {
+            if(!confirm(`¿${nuevoEstatus === 'Suspendido' ? 'Cortar' : 'Reactivar'} el servicio?`)) return;
+            try {
+                const res = await fetch('../api/suspender_taller.php', { method: 'POST', body: JSON.stringify({ taller_id: idTaller, nuevo_estatus: nuevoEstatus }) });
+                const data = await res.json();
+                if(!data.error) { cargarTalleres(); document.getElementById('modal-gestion').classList.add('hidden'); }
+            } catch(e) {}
+        }
+        
+        async function registrarPagoFinal() {
+            const btn = document.getElementById('btnGuardarPago');
+            const msj = document.getElementById('msj-pago');
+            btn.disabled = true; btn.innerText = "GUARDANDO...";
+            
+            const payload = {
+                taller_id: document.getElementById('pago-taller-id').value,
+                monto: document.getElementById('pago-monto').value,
+                metodo: document.getElementById('pago-metodo').value,
+                nueva_fecha: document.getElementById('pago-nueva-fecha').value
+            };
+
+            try {
+                const res = await fetch('../api/master_registrar_pago.php', { method: 'POST', body: JSON.stringify(payload) });
+                
+                // Leemos la respuesta del servidor como texto crudo primero
+                const text = await res.text(); 
+                
+                try {
+                    // Intentamos convertirlo a JSON
+                    const data = JSON.parse(text);
+                    if(!data.error) {
+                        cerrarModalPago();
+                        cargarFinanzas(); 
+                        cargarTalleres(); 
+                    } else { 
+                        msj.innerText = data.mensaje; 
+                        msj.style.color = "red"; 
+                    }
+                } catch(parseError) {
+                    // Si falla, significa que PHP arrojó un error fatal o el archivo no existe
+                    console.error("Respuesta del servidor:", text);
+                    msj.innerText = "Falla en servidor. Presiona F12 y revisa la pestaña 'Consola' para ver el error real."; 
+                    msj.style.color = "red";
+                }
+            } catch(e) { 
+                msj.innerText = "Error de red."; msj.style.color = "red"; 
+            }
+            finally { 
+                btn.disabled = false; btn.innerText = "GUARDAR PAGO"; 
+            }
+        }
+    </script>
+</body>
+</html>

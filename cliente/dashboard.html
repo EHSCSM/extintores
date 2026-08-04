@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Cliente - Riesgos Cero</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased flex h-screen">
+
+    <!-- MENÚ LATERAL -->
+    <aside class="w-64 bg-[#0f172a] text-white flex flex-col hidden md:flex flex-shrink-0 shadow-xl z-30">
+        <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800">
+            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shadow-sm">
+                <i class="ph-bold ph-buildings text-xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-lg tracking-tight leading-none">Riesgos Cero</h1>
+                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Portal Cliente</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 mb-2">Mi Empresa</p>
+            
+            <button class="w-full flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-sm transition">
+                <i class="ph-bold ph-fire-extinguisher text-lg"></i> Mis Extintores
+            </button>
+            <button onclick="descargarMiDictamen()" class="w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition">
+                <i class="ph-bold ph-file-pdf text-lg"></i> Descargar Dictamen
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="bg-slate-800 p-3 rounded-xl flex items-center gap-3 mb-3">
+                <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center"><i class="ph-fill ph-user text-slate-400"></i></div>
+                <div class="overflow-hidden">
+                    <p id="nombre-cliente" class="text-xs font-bold text-white truncate">Cargando...</p>
+                    <p class="text-[10px] text-blue-400 font-bold">Cliente Autorizado</p>
+                </div>
+            </div>
+            <button onclick="cerrarSesion()" class="w-full text-left text-slate-400 hover:text-red-400 px-4 py-2 font-bold text-sm transition flex items-center gap-3">
+                <i class="ph-bold ph-sign-out text-lg"></i> Cerrar Sesión
+            </button>
+        </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+        
+        <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0">
+            <h2 class="text-xl font-black text-slate-800">Monitoreo de Equipos</h2>
+            <button onclick="cargarMiInventario()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-200 flex items-center gap-2"><i class="ph-bold ph-arrows-clockwise"></i> Actualizar</button>
+        </header>
+
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+
+                <!-- INDICADORES (KPIs) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-fire-extinguisher text-2xl"></i></div>
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Equipos</p><h3 class="text-2xl font-black text-slate-800" id="kpi-total">0</h3></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 border-b-4 border-b-emerald-500">
+                        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-check-circle text-2xl"></i></div>
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operativos</p><h3 class="text-2xl font-black text-slate-800" id="kpi-operativos">0</h3></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 border-b-4 border-b-amber-500">
+                        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-wrench text-2xl"></i></div>
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">En Mantenimiento</p><h3 class="text-2xl font-black text-slate-800" id="kpi-mantenimiento">0</h3></div>
+                    </div>
+                </div>
+
+                <!-- TABLA DE INVENTARIO -->
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-black text-slate-800 text-sm uppercase">Mi Inventario Físico</h3>
+                        <div class="relative w-64 hidden md:block">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+                            <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar por Folio QR..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[60vh] custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-white z-10 shadow-sm">
+                                <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-200">
+                                    <th class="p-4 font-black">Folio QR</th>
+                                    <th class="p-4 font-black">Tipo y Capacidad</th>
+                                    <th class="p-4 font-black">Ubicación</th>
+                                    <th class="p-4 font-black text-center">Último Servicio</th>
+                                    <th class="p-4 font-black text-center">Estatus Actual</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-mi-inventario" class="text-sm font-medium divide-y divide-slate-100">
+                                <tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">Cargando mis equipos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // SEGURIDAD SAAS Y CARGA DE DATOS
+        const empresaId = localStorage.getItem('empresa_id');
+        const tallerId = localStorage.getItem('taller_id') || 1;
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            // Verificar si hay sesión
+            if (!empresaId || empresaId === "0" || localStorage.getItem('usuario_rol') !== 'cliente') {
+                window.location.replace('../index.html');
+                return;
+            }
+            document.getElementById('nombre-cliente').innerText = localStorage.getItem('usuario_nombre') || 'Cliente';
+            cargarMiInventario();
+            
+            // Obtener logo e info del Taller (Marca Blanca)
+            fetch(`../api/obtener_info_taller.php?taller_id=${tallerId}`)
+            .then(res => res.json())
+            .then(data => {
+            if(!data.error && data.datos.logo_url) {
+            // Reemplaza el ícono de la esquina superior izquierda con la imagen del logo
+            document.querySelector('.bg-blue-500.rounded-lg').innerHTML = `<img src="../${data.datos.logo_url}" class="w-full h-full object-cover rounded-lg" alt="Logo">`;
+            document.querySelector('h1').innerText = data.datos.nombre;
+             }
+            });
+        });
+
+        function cerrarSesion() { 
+            localStorage.clear(); 
+            window.location.href = "../index.html"; 
+        }
+
+        async function cargarMiInventario() {
+            const tbody = document.getElementById('tabla-mi-inventario');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold"><i class="ph-bold ph-spinner animate-spin text-2xl mb-2"></i><br>Sincronizando con el taller...</td></tr>';
+            
+            try {
+                // Reutilizamos el endpoint inteligente que hicimos en pasos anteriores
+                const res = await fetch(`../api/obtener_inventario.php?empresa_id=${empresaId}&taller_id=${tallerId}`);
+                const data = await res.json();
+                
+                if (data.error || data.datos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">No tienes equipos registrados.</td></tr>'; 
+                    return;
+                }
+
+                // Cálculos en vivo para los KPIs
+                let total = data.datos.length;
+                let operativos = 0;
+                let mantenimiento = 0;
+
+                tbody.innerHTML = data.datos.map(ext => {
+                    if (ext.estatus === 'Operativo') operativos++;
+                    else mantenimiento++;
+
+                    let colorEstatus = ext.estatus === 'Operativo' ? 'text-emerald-700 bg-emerald-100' : 'text-amber-700 bg-amber-100';
+                    let iconoEstatus = ext.estatus === 'Operativo' ? 'ph-check-circle' : 'ph-wrench';
+
+                    return `
+                    <tr class="hover:bg-slate-50 transition-colors fila-equipo">
+                        <td class="p-4 font-black text-slate-800 qr-text">${ext.codigo_qr}</td>
+                        <td class="p-4 text-xs font-bold text-slate-600">${ext.tipo_agente} - ${ext.capacidad}</td>
+                        <td class="p-4 text-xs text-slate-500">${ext.ubicacion_especifica || 'General'}</td>
+                        <td class="p-4 text-xs text-center font-bold text-slate-500">${ext.ultima_recarga || 'Sin dato'}</td>
+                        <td class="p-4 text-center">
+                            <span class="${colorEstatus} px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1">
+                                <i class="ph-fill ${iconoEstatus}"></i> ${ext.estatus}
+                            </span>
+                        </td>
+                    </tr>`;
+                }).join('');
+
+                // Actualizar KPIs visuales
+                document.getElementById('kpi-total').innerText = total;
+                document.getElementById('kpi-operativos').innerText = operativos;
+                document.getElementById('kpi-mantenimiento').innerText = mantenimiento;
+
+            } catch (error) { 
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-red-500 font-bold">Error al conectar con el servidor.</td></tr>'; 
+            }
+        }
+
+        function descargarMiDictamen() {
+            // Usa el mismo generador de PDF que el administrador, ¡ahorramos código!
+            window.open(`../api/generar_dictamen.php?empresa_id=${empresaId}`, '_blank');
+        }
+
+        function filtrarTabla() {
+            const filtro = document.getElementById('buscador').value.toLowerCase();
+            const filas = document.querySelectorAll('.fila-equipo');
+            filas.forEach(fila => {
+                const textoQR = fila.querySelector('.qr-text').innerText.toLowerCase();
+                fila.style.display = textoQR.includes(filtro) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>App Técnico - Riesgos Cero</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased pb-24">
+
+    <header class="bg-[#0f172a] text-white p-5 sticky top-0 z-50 shadow-lg rounded-b-3xl">
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-inner"><i class="ph-bold ph-user text-xl"></i></div>
+                <div>
+                    <h1 id="nombre-tecnico" class="font-black text-lg leading-tight">Cargando...</h1>
+                    <p class="text-[10px] text-blue-300 font-bold uppercase tracking-widest">Técnico Operativo</p>
+                </div>
+            </div>
+            <button onclick="cerrarSesion()" class="bg-slate-800 p-2 rounded-full text-slate-400 hover:text-red-400"><i class="ph-bold ph-sign-out text-xl"></i></button>
+        </div>
+    </header>
+
+    <main class="p-5 max-w-lg mx-auto mt-2">
+        
+        <!-- VISTA 1: AGENDA DE RUTAS -->
+        <div id="vista-rutas" class="seccion-app block space-y-6">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900">Agenda de Hoy</h2>
+                    <p class="text-xs text-slate-500 font-medium">Empresas asignadas a tu ruta.</p>
+                </div>
+                <button onclick="cargarMisRutas()" class="bg-white text-slate-600 p-2 rounded-xl shadow-sm border border-slate-200"><i class="ph-bold ph-arrows-clockwise text-lg"></i></button>
+            </div>
+            <div id="contenedor-rutas" class="space-y-4">
+                <div class="bg-white p-8 rounded-3xl shadow-sm text-center border border-slate-100">
+                    <i class="ph-bold ph-spinner animate-spin text-3xl text-blue-500 mb-2"></i>
+                    <p class="text-sm font-bold text-slate-500">Sincronizando rutas...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA 2: HISTORIAL Y PROGRESO -->
+        <div id="vista-historial" class="seccion-app hidden">
+            <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 mb-6">
+                <h2 class="text-xl font-black text-slate-900 mb-4">Mi Progreso</h2>
+                <div class="flex justify-between items-center bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 shadow-inner">
+                    <div class="text-center w-1/2 border-r border-blue-200">
+                        <p class="text-[10px] text-blue-500 font-bold uppercase tracking-widest">Total Equipos</p>
+                        <p id="progreso-total" class="text-3xl font-black text-blue-900">0</p>
+                    </div>
+                    <div class="text-center w-1/2">
+                        <p class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Auditados Hoy</p>
+                        <p id="progreso-auditados" class="text-3xl font-black text-emerald-600">0</p>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3"><i class="ph-bold ph-clock-counter-clockwise"></i> Últimos 5 escaneados</h3>
+                    <div id="lista-historial-tecnico" class="space-y-2">
+                        <p class="text-xs text-slate-400 italic text-center py-2">Cargando historial...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA 3: CHECKLIST COMPLETO Y FIRMA -->
+        <div id="vista-inspeccion" class="seccion-app hidden space-y-6">
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-black text-lg text-slate-800">Inspección Física</h2>
+                    <button onclick="cambiarVista('vista-rutas', document.querySelector('.nav-btn'))" class="text-red-500 font-bold text-sm">Cancelar</button>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                    <p id="lbl-id-auditoria" class="font-black text-slate-900 text-lg">FOLIO: ---</p>
+                    <p id="infoExtintor" class="text-xs text-slate-500 font-bold mt-1">Cargando...</p>
+                    <input type="hidden" id="extintorId">
+                </div>
+
+                <form id="formChecklist" class="space-y-5" onsubmit="event.preventDefault(); guardarChecklist();">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Año Fabricación</label>
+                            <input type="number" id="insp_fabricacion" class="w-full border p-3 rounded-xl font-bold mt-1" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Última Recarga</label>
+                            <input type="month" id="insp_recarga" class="w-full border p-3 rounded-xl font-bold mt-1" required>
+                        </div>
+                    </div>
+
+                    <!-- ============================================== -->
+                    <!-- CHECKLIST DETALLADO (ESTADO FÍSICO) -->
+                    <!-- ============================================== -->
+                    <div class="border-t border-slate-100 pt-4">
+                        <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-3">Checklist del Equipo</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Pintura / Cilindro</label>
+                                <select id="chk_cilindro" class="w-full border p-2 rounded-lg font-bold text-xs bg-white"><option value="Bueno">Bueno</option><option value="Malo">Malo</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Válvula</label>
+                                <select id="chk_valvula" class="w-full border p-2 rounded-lg font-bold text-xs bg-white"><option value="Bueno">Bueno</option><option value="Malo">Malo</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Manómetro</label>
+                                <select id="chk_manometro" class="w-full border p-2 rounded-lg font-bold text-xs bg-white"><option value="Bueno">Bueno</option><option value="Malo">Malo</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Manguera/Difusor</label>
+                                <select id="chk_manguera" class="w-full border p-2 rounded-lg font-bold text-xs bg-white"><option value="Bueno">Bueno</option><option value="Malo">Malo</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Etiquetas / Datos</label>
+                                <select id="chk_etiquetas" class="w-full border p-2 rounded-lg font-bold text-xs bg-white"><option value="Bueno">Bueno</option><option value="Malo">Malo</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Seguro / Marchamo</label>
+                                <select id="chk_marchamo" class="w-full border p-2 rounded-lg font-bold text-xs bg-white"><option value="Bueno">Bueno</option><option value="Malo">Malo</option></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================== -->
+                    <!-- COTIZACIONES Y REQUERIMIENTOS -->
+                    <!-- ============================================== -->
+                    <div class="border-t border-slate-100 pt-4">
+                        <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-3">Requisiciones (Manda a cotizar)</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100"><input type="checkbox" id="cot_recarga_fg" class="w-5 h-5 rounded text-blue-600"> Recarga / Mantenimiento Anual</label>
+                            <label class="flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100"><input type="checkbox" id="cot_refaccion" class="w-5 h-5 rounded text-blue-600"> Cambio de Refacciones (Válvula, manguera, etc)</label>
+                            <label class="flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100"><input type="checkbox" id="cot_senaletica" class="w-5 h-5 rounded text-blue-600"> Falta Señalética (Grave)</label>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Estatus Final (Dictamen)</label>
+                        <select id="estatusFinal" class="w-full border p-3 rounded-xl font-bold mt-1 bg-white text-blue-900 border-blue-200" required>
+                            <option value="Aprobado">🟢 APROBADO (En óptimas condiciones)</option>
+                            <option value="Condicionado">🟡 CONDICIONADO (Requiere Servicio/Recarga)</option>
+                            <option value="Rechazado">🔴 RECHAZADO (Baja o Daño Irreparable)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Observaciones</label>
+                        <textarea id="insp_observaciones" rows="2" class="w-full border p-3 rounded-xl font-bold mt-1" placeholder="Ej. El cilindro presenta óxido en la base..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Firma del Técnico / Testigo</label>
+                        <div class="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 overflow-hidden">
+                            <canvas id="canvasFirma" class="w-full h-32 touch-none"></canvas>
+                        </div>
+                        <button type="button" onclick="limpiarFirma()" class="text-xs text-slate-500 font-bold mt-2 w-full text-right underline">Limpiar Firma</button>
+                    </div>
+
+                    <p id="mensajeGuardado" class="text-center font-bold text-sm"></p>
+
+                    <button type="submit" id="btnGuardar" class="w-full bg-[#10b981] text-white font-black py-4 rounded-xl text-lg hover:bg-emerald-600 transition shadow-lg shadow-emerald-900/20 active:scale-95 flex justify-center items-center gap-2">
+                        <i class="ph-bold ph-check-circle text-2xl"></i> GUARDAR INSPECCIÓN
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE LA CÁMARA -->
+    <div id="modal-escaner" class="fixed inset-0 bg-black z-[100] hidden flex flex-col">
+        <div class="p-4 bg-slate-900 text-white flex justify-between items-center">
+            <h2 class="font-bold">Escanear Extintor</h2>
+            <button onclick="pararEscaneo()" class="text-white bg-slate-800 p-2 rounded-full"><i class="ph-bold ph-x text-xl"></i></button>
+        </div>
+        <div id="reader-nativo" class="flex-1 w-full bg-black"></div>
+        <div class="p-6 bg-slate-900">
+            <p class="text-xs text-center text-slate-400 mb-2 font-bold uppercase tracking-widest">¿Cámara oscura o dañada?</p>
+            <div class="flex gap-2">
+                <input type="text" id="inputCodigo" placeholder="Escribir QR manual..." class="w-full p-3 rounded-xl text-slate-900 font-black outline-none text-center uppercase">
+                <button onclick="buscarExtintor()" class="bg-blue-600 text-white px-6 rounded-xl font-bold shadow-lg">Buscar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVEGACIÓN INFERIOR -->
+    <nav class="fixed bottom-0 w-full bg-white border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+        <button onclick="cambiarVista('vista-rutas', this)" class="nav-btn flex flex-col items-center gap-1 text-blue-600 transition-colors">
+            <i class="ph-fill ph-map-trifold text-2xl"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Mi Ruta</span>
+        </button>
+        <button onclick="cambiarVista('vista-historial', this); cargarProgresoTecnico();" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-blue-500 transition-colors">
+            <i class="ph-bold ph-clock-counter-clockwise text-2xl"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Historial</span>
+        </button>
+    </nav>
+
+    <script>
+        const tecnicoId = localStorage.getItem('usuario_id');
+        const rol = localStorage.getItem('usuario_rol');
+        let html5QrCode = null;
+        let canvas, ctx;
+        let dibujando = false;
+        let firmaRealizada = false;
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!tecnicoId || rol !== 'tecnico') { window.location.replace('index.html'); return; }
+            document.getElementById('nombre-tecnico').innerText = localStorage.getItem('usuario_nombre') || 'Técnico';
+            cargarMisRutas();
+            setTimeout(inicializarCanvas, 500);
+        });
+
+        async function cerrarSesion() { 
+            try { await fetch('api/logout.php'); } catch(e) {}
+            localStorage.clear(); 
+            window.location.replace("../index.html"); 
+        }
+
+        function cambiarVista(idVista, btnActivo) {
+            document.querySelectorAll('.seccion-app').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(idVista).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600'); btn.classList.add('text-slate-400');
+                btn.querySelector('i').classList.replace('ph-fill', 'ph-bold');
+            });
+            btnActivo.classList.remove('text-slate-400'); btnActivo.classList.add('text-blue-600');
+            btnActivo.querySelector('i').classList.replace('ph-bold', 'ph-fill');
+        }
+
+        async function cargarMisRutas() {
+            const contenedor = document.getElementById('contenedor-rutas');
+            try {
+                const res = await fetch(`api/obtener_mis_rutas.php?tecnico_id=${tecnicoId}`);
+                const data = await res.json();
+                
+                if (data.error || data.datos.length === 0) {
+                    contenedor.innerHTML = `<div class="bg-emerald-50 p-8 rounded-3xl text-center border border-emerald-100"><div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-bold ph-check text-3xl"></i></div><p class="text-sm font-black text-emerald-800">¡Libre por hoy!</p><p class="text-xs text-emerald-600 mt-1">No tienes rutas pendientes.</p></div>`;
+                    return;
+                }
+
+                contenedor.innerHTML = data.datos.map(ruta => {
+                    let esPendiente = ruta.estatus === 'Pendiente';
+                    let areaBotones = esPendiente 
+                        ? `<button onclick="iniciarRuta(${ruta.ruta_id}, ${ruta.empresa_id})" class="w-full bg-[#1e3a8a] text-white font-black py-4 rounded-xl text-sm hover:bg-blue-900 transition shadow-lg shadow-blue-900/20 active:scale-95"><i class="ph-bold ph-play"></i> INICIAR SERVICIO AQUÍ</button>`
+                        : `<div class="grid grid-cols-2 gap-2">
+                            <button onclick="escanearQR(${ruta.empresa_id}, ${ruta.ruta_id})" class="w-full bg-[#10b981] text-white font-black py-4 rounded-xl text-xs hover:bg-emerald-600 transition shadow-lg shadow-emerald-900/20 active:scale-95 flex flex-col items-center justify-center gap-1"><i class="ph-bold ph-qr-code text-xl"></i> ESCANEAR QR</button>
+                            <button onclick="intentarCerrarRuta(${ruta.ruta_id})" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xs hover:bg-slate-900 transition shadow-lg shadow-slate-900/20 active:scale-95 flex flex-col items-center justify-center gap-1"><i class="ph-bold ph-check-square-offset text-xl"></i> CERRAR RUTA</button>
+                        </div>`;
+                    
+                    return `
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border ${!esPendiente ? 'border-blue-400 ring-4 ring-blue-50' : 'border-slate-200'}">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="${esPendiente ? 'bg-slate-100 text-slate-500' : 'bg-blue-500 text-white'} px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">${ruta.estatus}</span>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-900 leading-tight mb-1">${ruta.empresa}</h3>
+                        <p class="text-xs text-slate-500 font-medium mb-4 flex items-center gap-1"><i class="ph-bold ph-map-pin"></i> ${ruta.direccion || 'Sin dirección'}</p>
+                        <div class="border-t border-slate-100 pt-4 mt-2">${areaBotones}</div>
+                    </div>`;
+                }).join('');
+            } catch (error) { contenedor.innerHTML = '<p class="text-center text-red-500 font-bold">Error de conexión.</p>'; }
+        }
+
+        async function iniciarRuta(rutaId, empresaId) {
+            if(!confirm("¿Confirmas que ya estás en las instalaciones del cliente?")) return;
+            try {
+                const res = await fetch('api/actualizar_ruta.php', { method: 'POST', body: JSON.stringify({ ruta_id: rutaId, nuevo_estatus: 'En Proceso' }) });
+                const data = await res.json();
+                if (!data.error) { localStorage.setItem('empresa_id', empresaId); cargarMisRutas(); } else { alert(data.mensaje); }
+            } catch (e) { alert("Error de red."); }
+        }
+
+        // ==========================================
+        // BOTÓN CERRAR RUTA (¡AHORA SÍ FUNCIONA!)
+        // ==========================================
+        async function intentarCerrarRuta(rutaId) {
+            // Revisamos si el técnico escaneó todo, o si dejó equipos a medias.
+            const total = parseInt(document.getElementById('progreso-total').innerText) || 0;
+            const auditados = parseInt(document.getElementById('progreso-auditados').innerText) || 0;
+            
+            if (total > 0 && auditados < total) {
+                if(!confirm(`⚠️ ATENCIÓN: Solo has auditado ${auditados} de ${total} equipos.\n¿Estás completamente seguro de cerrar la ruta y marcharte?`)) return;
+            } else {
+                if(!confirm("¿Deseas dar por terminada la ruta de este cliente?")) return;
+            }
+
+            try {
+                const res = await fetch('api/actualizar_ruta.php', { 
+                    method: 'POST', 
+                    body: JSON.stringify({ ruta_id: rutaId, nuevo_estatus: 'Terminada' }) 
+                });
+                const data = await res.json();
+                
+                if (!data.error) {
+                    alert("¡Ruta finalizada con éxito! Excelente trabajo.");
+                    localStorage.removeItem('empresa_id'); // Limpiamos la empresa de la memoria
+                    cargarMisRutas();
+                } else {
+                    alert(data.mensaje);
+                }
+            } catch (e) { alert("Error al cerrar la ruta de forma definitiva."); }
+        }
+
+        function escanearQR(empresaId, rutaId) {
+            localStorage.setItem('empresa_id', empresaId);
+            document.getElementById('modal-escaner').classList.remove('hidden'); document.getElementById('modal-escaner').classList.add('flex');
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader-nativo");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                (codigo) => { if (navigator.vibrate) navigator.vibrate(100); pararEscaneo(); document.getElementById('inputCodigo').value = codigo.trim(); buscarExtintor(); },
+                (error) => {} 
+            ).catch(err => { alert("Permiso de cámara denegado. Escribe el folio abajo."); });
+        }
+
+        function pararEscaneo() {
+            document.getElementById('modal-escaner').classList.add('hidden'); document.getElementById('modal-escaner').classList.remove('flex');
+            if (html5QrCode) html5QrCode.stop().then(() => { html5QrCode.clear(); }).catch(err => console.log(err));
+        }
+
+        async function buscarExtintor() {
+            const codigo = document.getElementById('inputCodigo').value.trim();
+            if (!codigo) { alert("Ingresa un código"); return; }
+            const tallerId = localStorage.getItem('taller_id') || 1;
+            const empresaId = localStorage.getItem('empresa_id');
+            try {
+                const res = await fetch(`api/obtener_extintor.php?qr=${codigo}&taller_id=${tallerId}`);
+                const data = await res.json();
+                if (!data.error) {
+                    if(data.extintor.empresa_id != empresaId) { alert("¡Este equipo es de otro cliente!"); pararEscaneo(); return; }
+                    pararEscaneo();
+                    document.querySelectorAll('.seccion-app').forEach(sec => sec.classList.add('hidden'));
+                    document.getElementById('vista-inspeccion').classList.remove('hidden');
+                    document.getElementById('extintorId').value = data.extintor.id;
+                    document.getElementById('lbl-id-auditoria').innerText = "FOLIO: " + data.extintor.codigo_qr;
+                    document.getElementById('infoExtintor').innerText = `${data.extintor.tipo_agente} - ${data.extintor.capacidad}`;
+                    document.getElementById('insp_fabricacion').value = data.extintor.ano_fabricacion || "";
+                    document.getElementById('insp_recarga').value = data.extintor.ultima_recarga || "";
+                    limpiarFirma();
+                } else { alert(data.mensaje); }
+            } catch (e) { alert("Error al buscar."); }
+        }
+
+        function inicializarCanvas() {
+            canvas = document.getElementById('canvasFirma'); if(!canvas) return;
+            ctx = canvas.getContext('2d'); const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width || 300; canvas.height = 128;
+            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a';
+            canvas.addEventListener('mousedown', iniciarDibujo); canvas.addEventListener('mousemove', dibujar); canvas.addEventListener('mouseup', detenerDibujo);
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); iniciarDibujo(e.touches[0]); }, {passive: false});
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); dibujar(e.touches[0]); }, {passive: false});
+            canvas.addEventListener('touchend', (e) => { e.preventDefault(); detenerDibujo(); }, {passive: false});
+        }
+        function iniciarDibujo(e) { dibujando = true; firmaRealizada = true; ctx.beginPath(); const rect = canvas.getBoundingClientRect(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top); }
+        function dibujar(e) { if (!dibujando) return; const rect = canvas.getBoundingClientRect(); ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctx.stroke(); }
+        function detenerDibujo() { dibujando = false; ctx.beginPath(); }
+        function limpiarFirma() { if(!ctx) return; ctx.clearRect(0, 0, canvas.width, canvas.height); firmaRealizada = false; }
+
+        async function guardarChecklist() {
+            const btn = document.getElementById('btnGuardar'); const msj = document.getElementById('mensajeGuardado'); const txtOriginal = btn.innerHTML;
+            try {
+                btn.disabled = true; btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-xl"></i> GUARDANDO...'; msj.innerText = "Empaquetando datos..."; msj.style.color = "#1e3a8a";
+                const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : "Bueno";
+                const getCheck = (id) => (document.getElementById(id) && document.getElementById(id).checked) ? 1 : 0;
+                
+                const extId = getVal('extintorId'); const usrId = localStorage.getItem('usuario_id');
+                const fab = getVal('insp_fabricacion'); const rec = getVal('insp_recarga');
+                if (!extId || !fab || !rec) throw new Error("Faltan datos obligatorios.");
+                
+                const canvasElement = document.getElementById('canvasFirma');
+                const firmaBase64 = (canvasElement && firmaRealizada) ? canvasElement.toDataURL("image/png") : "";
+                
+                const payload = {
+                    extintor_id: extId, usuario_id: usrId, estatus_final: getVal('estatusFinal'),
+                    ano_fabricacion: fab, ultima_recarga: rec, 
+                    chk_cilindro: getVal('chk_cilindro'), chk_valvula: getVal('chk_valvula'), chk_presion: getVal('chk_manometro'), chk_manometro: getVal('chk_manometro'),
+                    chk_marchamo: getVal('chk_marchamo'), chk_manguera: getVal('chk_manguera'), chk_difusor: getVal('chk_manguera'), chk_senalamiento: getVal('chk_etiquetas'), 
+                    chk_etiquetas: getVal('chk_etiquetas'), chk_gancho: "Bueno", chk_cubierta: "Bueno", chk_obstruido: "Bueno", chk_garantia: "Bueno",
+                    cot_recarga_fg: getCheck('cot_recarga_fg'), cot_senaletica: getCheck('cot_senaletica'), cot_soporte: 0, cot_funda: 0, cot_refaccion: getCheck('cot_refaccion'), 
+                    altura_correcta: 1, libre_acceso: 1, 
+                    observaciones: getVal('insp_observaciones'), firma: firmaBase64
+                };
+
+                const res = await fetch(`api/guardar_inspeccion.php`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await res.json();
+                
+                if (data.error) throw new Error(data.mensaje);
+                
+                msj.innerText = "¡Inspección Guardada!"; msj.style.color = "#10b981";
+                cargarProgresoTecnico(); 
+                
+                setTimeout(() => {
+                    document.getElementById('vista-inspeccion').classList.add('hidden');
+                    document.getElementById('vista-rutas').classList.remove('hidden');
+                    document.getElementById('formChecklist').reset(); limpiarFirma(); document.getElementById('inputCodigo').value = ""; window.scrollTo(0, 0); msj.innerText = "";
+                }, 2000);
+            } catch (error) { msj.innerText = "Error: " + error.message; msj.style.color = "#dc2626"; } 
+            finally { btn.disabled = false; btn.innerHTML = txtOriginal; }
+        }
+
+        async function cargarProgresoTecnico() {
+            const empresaId = localStorage.getItem('empresa_id');
+            if(!empresaId || empresaId === "0") return;
+            try {
+                const res = await fetch(`api/obtener_progreso_ruta.php?empresa_id=${empresaId}&tecnico_id=${tecnicoId}`);
+                const data = await res.json();
+                if(!data.error) {
+                    document.getElementById('progreso-total').innerText = data.total; document.getElementById('progreso-auditados').innerText = data.auditados;
+                    const contenedorHistorial = document.getElementById('lista-historial-tecnico');
+                    if(data.historial.length === 0) { contenedorHistorial.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Aún no has auditado equipos hoy.</p>'; } 
+                    else {
+                        contenedorHistorial.innerHTML = data.historial.map(h => {
+                            let color = h.estatus_final_extintor === 'Aprobado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700';
+                            return `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 shadow-sm"><span class="font-black text-slate-700 text-sm tracking-widest">${h.codigo_qr}</span><span class="text-[9px] font-black uppercase px-2 py-1 rounded ${color}">${h.estatus_final_extintor}</span></div>`;
+                        }).join('');
+                    }
+                }
+            } catch(e) {}
+        }
+    </script>
+</body>
+</html>

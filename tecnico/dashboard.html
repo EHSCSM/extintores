@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>App Técnico - Riesgos Cero</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased pb-24">
+
+    <!-- HEADER MÓVIL -->
+    <header class="bg-[#0f172a] text-white p-5 sticky top-0 z-50 shadow-lg rounded-b-3xl">
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-inner">
+                    <i class="ph-bold ph-user text-xl"></i>
+                </div>
+                <div>
+                    <h1 id="nombre-tecnico" class="font-black text-lg leading-tight">Cargando...</h1>
+                    <p class="text-[10px] text-blue-300 font-bold uppercase tracking-widest">Técnico Operativo</p>
+                </div>
+            </div>
+            <button onclick="cerrarSesion()" class="bg-slate-800 p-2 rounded-full text-slate-400 hover:text-red-400">
+                <i class="ph-bold ph-sign-out text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="p-5 space-y-6 max-w-lg mx-auto mt-2">
+        
+        <div class="flex justify-between items-end">
+            <div>
+                <h2 class="text-xl font-black text-slate-900">Agenda de Hoy</h2>
+                <p class="text-xs text-slate-500 font-medium">Empresas asignadas a tu ruta.</p>
+            </div>
+            <button onclick="cargarMisRutas()" class="bg-white text-slate-600 p-2 rounded-xl shadow-sm border border-slate-200">
+                <i class="ph-bold ph-arrows-clockwise text-lg"></i>
+            </button>
+        </div>
+
+        <div id="contenedor-rutas" class="space-y-4">
+            <!-- TARJETA DE CARGA -->
+            <div class="bg-white p-8 rounded-3xl shadow-sm text-center border border-slate-100">
+                <i class="ph-bold ph-spinner animate-spin text-3xl text-blue-500 mb-2"></i>
+                <p class="text-sm font-bold text-slate-500">Sincronizando rutas...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BARRA DE NAVEGACIÓN INFERIOR (ESTILO APP MÓVIL) -->
+    <nav class="fixed bottom-0 w-full bg-white border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 pb-safe">
+        <button class="flex flex-col items-center gap-1 text-blue-600">
+            <i class="ph-fill ph-map-trifold text-2xl"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Mi Ruta</span>
+        </button>
+        <button onclick="alert('Historial en desarrollo')" class="flex flex-col items-center gap-1 text-slate-400">
+            <i class="ph-bold ph-clock-counter-clockwise text-2xl"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Historial</span>
+        </button>
+    </nav>
+
+    <script>
+        // SEGURIDAD Y DATOS DE SESIÓN
+        const tecnicoId = localStorage.getItem('usuario_id');
+        const rol = localStorage.getItem('usuario_rol');
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!tecnicoId || rol !== 'tecnico') {
+                window.location.replace('../index.html');
+                return;
+            }
+            document.getElementById('nombre-tecnico').innerText = localStorage.getItem('usuario_nombre') || 'Técnico';
+            cargarMisRutas();
+        });
+
+        function cerrarSesion() { localStorage.clear(); window.location.href = "../index.html"; }
+
+        async function cargarMisRutas() {
+            const contenedor = document.getElementById('contenedor-rutas');
+            
+            try {
+                const res = await fetch(`../api/obtener_mis_rutas.php?tecnico_id=${tecnicoId}`);
+                const data = await res.json();
+                
+                if (data.error || data.datos.length === 0) {
+                    contenedor.innerHTML = `
+                        <div class="bg-emerald-50 p-8 rounded-3xl text-center border border-emerald-100">
+                            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-bold ph-check text-3xl"></i></div>
+                            <p class="text-sm font-black text-emerald-800">¡Libre por hoy!</p>
+                            <p class="text-xs text-emerald-600 mt-1">No tienes rutas pendientes.</p>
+                        </div>`;
+                    return;
+                }
+
+                contenedor.innerHTML = data.datos.map(ruta => {
+                    let esPendiente = ruta.estatus === 'Pendiente';
+                    
+                    // Si está en proceso, mostramos botones de Escanear y Cerrar
+                    let areaBotones = esPendiente 
+                        ? `<button onclick="iniciarRuta(${ruta.ruta_id})" class="w-full bg-[#1e3a8a] text-white font-black py-4 rounded-xl text-sm hover:bg-blue-900 transition shadow-lg shadow-blue-900/20 active:scale-95"><i class="ph-bold ph-play"></i> INICIAR SERVICIO AQUÍ</button>`
+                        : `
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="escanearQR(${ruta.empresa_id}, ${ruta.ruta_id})" class="w-full bg-[#10b981] text-white font-black py-4 rounded-xl text-xs hover:bg-emerald-600 transition shadow-lg shadow-emerald-900/20 active:scale-95 flex flex-col items-center justify-center gap-1"><i class="ph-bold ph-qr-code text-xl"></i> ESCANEAR QR</button>
+                            <button onclick="intentarCerrarRuta(${ruta.ruta_id})" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xs hover:bg-slate-900 transition shadow-lg shadow-slate-900/20 active:scale-95 flex flex-col items-center justify-center gap-1"><i class="ph-bold ph-check-square-offset text-xl"></i> CERRAR RUTA</button>
+                        </div>
+                        <p class="text-[10px] text-center text-slate-400 font-bold mt-2"><i class="ph-fill ph-warning-circle"></i> No puedes cerrar ruta si faltan equipos por revisar.</p>
+                        `;
+
+                    let badgePoliza = ruta.tiene_poliza == 1 
+                        ? `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[9px] font-black uppercase"><i class="ph-fill ph-shield-check"></i> Póliza Activa</span>` 
+                        : `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[9px] font-black uppercase">Venta Externa</span>`;
+
+                    return `
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border ${!esPendiente ? 'border-blue-400 ring-4 ring-blue-50' : 'border-slate-200'}">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="${esPendiente ? 'bg-slate-100 text-slate-500' : 'bg-blue-500 text-white'} px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">${ruta.estatus}</span>
+                            ${badgePoliza}
+                        </div>
+                        <h3 class="text-xl font-black text-slate-900 leading-tight mb-1">${ruta.empresa}</h3>
+                        <p class="text-xs text-slate-500 font-medium mb-4 flex items-center gap-1"><i class="ph-bold ph-map-pin"></i> ${ruta.direccion || 'Sin dirección'}</p>
+                        
+                        <div class="border-t border-slate-100 pt-4 mt-2">
+                            ${areaBotones}
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch (error) {
+                contenedor.innerHTML = '<p class="text-center text-red-500 font-bold">Error de conexión.</p>';
+            }
+        }
+
+        // LÓGICA DE ACTUALIZACIÓN DE ESTATUS (Recicla el archivo que ya creamos)
+        async function iniciarRuta(rutaId) {
+            if(!confirm("¿Confirmas que ya estás en las instalaciones del cliente?")) return;
+            
+            try {
+                const res = await fetch('../api/actualizar_ruta.php', {
+                    method: 'POST',
+                    body: JSON.stringify({ ruta_id: rutaId, nuevo_estatus: 'En Proceso' })
+                });
+                const data = await res.json();
+                
+                if (!data.error) {
+                    cargarMisRutas(); // Refresca la pantalla para mostrar los botones de escanear
+                } else {
+                    alert(data.mensaje);
+                }
+            } catch (e) {
+                alert("Error de red.");
+            }
+        }
+
+        function escanearQR(empresaId, rutaId) {
+            alert("Preparando cámara del celular para la empresa ID: " + empresaId);
+            // Aquí conectaremos la cámara y el formulario de inspección en el próximo paso
+        }
+
+        function intentarCerrarRuta(rutaId) {
+            alert("Aquí el sistema verificará cuántos extintores hay vs cuántos inspeccionaste hoy.");
+            // Si todo coincide, llamará a actualizar_ruta.php con 'Terminada'
+        }
+    </script>
+</body>
+</html>

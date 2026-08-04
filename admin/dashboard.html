@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Taller de Extintores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased flex h-screen">
+
+    <aside class="w-64 bg-[#0f172a] text-white flex flex-col hidden md:flex flex-shrink-0 shadow-xl z-30">
+        <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800">
+            <div class="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center shadow-sm">
+                <i class="ph-bold ph-shield-check text-xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-lg tracking-tight leading-none">Riesgos Cero</h1>
+                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Panel Taller</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 mb-2">Operaciones B2B</p>
+            
+            <button onclick="cambiarSeccion('sec-dashboard', this)" class="menu-btn w-full flex items-center gap-3 bg-[#1e3a8a] text-white px-4 py-3 rounded-xl font-bold text-sm shadow-sm transition">
+                <i class="ph-bold ph-chart-pie-slice text-lg"></i> Centro de Mando
+            </button>
+            <button onclick="cambiarSeccion('sec-catalogos', this)" class="menu-btn w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition">
+                <i class="ph-bold ph-address-book text-lg"></i> Clientes y Técnicos
+            </button>
+            <button onclick="cambiarSeccion('sec-extintores', this)" class="menu-btn w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition">
+                <i class="ph-bold ph-fire-extinguisher text-lg"></i> Inventario Extintores
+            </button>
+            <button onclick="cambiarSeccion('sec-reportes', this)" class="menu-btn w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition">
+                <i class="ph-bold ph-clipboard-text text-lg"></i> Reportes / Dictámenes
+            </button>
+            <button onclick="cambiarSeccion('sec-rutas', this)" class="menu-btn w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition">
+                <i class="ph-bold ph-map-trifold text-lg"></i> Despacho de Rutas
+            </button>
+            <button onclick="cambiarSeccion('sec-configuracion', this)" class="menu-btn w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition">
+                <i class="ph-bold ph-gear text-lg"></i> Configuración
+            </button>
+            <button onclick="cambiarSeccion('sec-kanban', this); cargarKanban();" class="menu-btn w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition">
+                <i class="ph-bold ph-columns text-lg"></i> Taller / Kanban
+            </button>
+            
+        </nav>
+        
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="bg-slate-800 p-3 rounded-xl flex items-center gap-3 mb-3">
+                <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center"><i class="ph-fill ph-user text-slate-400"></i></div>
+                <div class="overflow-hidden">
+                    <p id="nombre-admin-sidebar" class="text-xs font-bold text-white truncate">Dueño Taller</p>
+                    <p class="text-[10px] text-emerald-400 font-bold">Administrador</p>
+                </div>
+            </div>
+            <button onclick="cerrarSesion()" class="w-full text-left text-slate-400 hover:text-red-400 px-4 py-2 font-bold text-sm transition flex items-center gap-3">
+                <i class="ph-bold ph-sign-out text-lg"></i> Cerrar Sesión
+            </button>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+        
+        <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0">
+            <h2 id="top-nav-title" class="text-xl font-black text-slate-800">Centro de Mando</h2>
+            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider">Multi-Empresa</span>
+        </header>
+
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+            <div class="max-w-7xl mx-auto">
+
+                <div id="sec-dashboard" class="seccion-app space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-buildings text-2xl"></i></div>
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clientes</p><h3 class="text-2xl font-black text-slate-800" id="kpi-clientes">0</h3></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-truck text-2xl"></i></div>
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">En Taller</p><h3 class="text-2xl font-black text-slate-800" id="kpi-taller">0</h3></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center"><i class="ph-bold ph-currency-dollar text-2xl"></i></div>
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cotizaciones</p><h3 class="text-2xl font-black text-slate-800" id="kpi-ventas">0</h3></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-5 border-b border-slate-100 flex justify-between"><h3 class="font-black text-slate-800 text-sm uppercase">Estatus por Cliente</h3></div>
+                        <div class="overflow-x-auto"><table class="w-full text-left text-sm divide-y divide-slate-100"><tbody id="tabla-resumen-clientes"></tbody></table></div>
+                    </div>
+
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 border-t-4 border-t-emerald-500 overflow-hidden">
+                        <div class="p-5 border-b border-slate-100"><h3 class="font-black text-slate-800 text-sm uppercase">Requisiciones a Cotizar</h3></div>
+                        <div class="overflow-x-auto"><table class="w-full text-left text-sm divide-y divide-slate-100"><tbody id="tabla-cotizaciones"></tbody></table></div>
+                    </div>
+
+                    <div class="bg-red-50 rounded-[2rem] shadow-sm border border-red-200 overflow-hidden">
+                        <div class="p-5 border-b border-red-100 flex justify-between items-center bg-white">
+                            <h3 class="font-black text-red-700 text-sm uppercase tracking-wider flex items-center gap-2">
+                                <i class="ph-fill ph-warning-circle text-lg"></i> Oportunidad de Renovación (Vencen en 30 días)
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <div class="overflow-x-auto max-h-48 custom-scrollbar">
+                                <table class="w-full text-left text-sm">
+                                    <tbody id="tabla-alertas" class="divide-y divide-red-100">
+                                        <tr><td class="p-4 text-center text-red-400 font-bold">Analizando inventarios...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sec-catalogos" class="seccion-app hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
+                            <h3 class="font-black text-slate-800 text-sm uppercase mb-4">Personal Técnico</h3>
+                            <form id="formAltaTecnico" onsubmit="event.preventDefault(); registrarTecnico();" class="space-y-3 mb-4">
+                                <input type="text" id="tec_nombre" placeholder="Nombre" class="w-full p-3 bg-slate-50 border rounded-xl text-xs font-bold" required>
+                                <input type="email" id="tec_correo" placeholder="Correo" class="w-full p-3 bg-slate-50 border rounded-xl text-xs font-bold" required>
+                                <input type="password" id="tec_password" placeholder="Contraseña" class="w-full p-3 bg-slate-50 border rounded-xl text-xs font-bold" required>
+                                <button type="submit" class="w-full bg-[#1e3a8a] text-white font-black py-3 rounded-xl text-xs">Guardar Técnico</button>
+                            </form>
+                            <div class="max-h-40 overflow-y-auto"><table class="w-full text-xs text-left"><tbody id="tabla-tecnicos-admin" class="divide-y divide-slate-100"></tbody></table></div>
+                        </div>
+                        <!-- Formulario Empresas -->
+                        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
+                            <h3 class="font-black text-slate-800 text-sm uppercase tracking-widest mb-4">Empresas Clientes</h3>
+                            <form id="formEmpresa" onsubmit="event.preventDefault(); guardarEmpresa();" class="space-y-4">
+                                <div>
+                                    <input type="text" id="reg-empresa-nombre" placeholder="Nombre Comercial" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700" required>
+                                </div>
+                                <div>
+                                    <input type="text" id="reg-empresa-direccion" placeholder="Dirección / Planta" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700" required>
+                                </div>
+                                
+
+                                <label class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer hover:bg-blue-100 transition">
+                                    <input type="checkbox" id="reg-empresa-poliza" class="w-5 h-5 text-blue-600 rounded cursor-pointer">
+                                    <span class="text-xs font-black text-blue-900 uppercase">¿Tiene Póliza de Mantenimiento?</span>
+                                </label>
+
+                                <p id="msj-empresa" class="text-[11px] font-bold text-center"></p>
+                                <button type="submit" id="btnGuardarEmpresa" class="w-full bg-[#10b981] text-white font-black py-3 rounded-xl hover:bg-emerald-600 transition shadow-sm mt-2">Guardar Empresa</button>
+                            </form>
+                            
+                            <div class="mt-6 border-t border-slate-100 pt-4">
+                                <table class="w-full text-left text-sm">
+                                    <tbody id="tabla-empresas-admin" class="divide-y divide-slate-100">
+                                        <tr><td class="p-3 text-slate-400">Cargando...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="sec-extintores" class="seccion-app hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-900">Inventario Global</h2>
+                            <p class="text-sm text-slate-500 font-medium">Buscador maestro de todos los equipos administrados por el taller.</p>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <!-- Buscador Inteligente -->
+                            <div class="relative w-full md:w-64">
+                                <i class="ph-bold ph-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" id="buscador-inventario" onkeyup="filtrarInventario()" placeholder="Buscar QR o Cliente..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold shadow-sm focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <button onclick="window.open('imprimir_qrs.html', '_blank')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-900 hidden md:flex items-center gap-2"><i class="ph-bold ph-qr-code"></i> Imprimir</button>
+                            <button onclick="abrirModalExtintor()" class="bg-[#10b981] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-600 flex items-center gap-2 whitespace-nowrap"><i class="ph-bold ph-plus"></i> Agregar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto max-h-[60vh] custom-scrollbar">
+                            <table class="w-full text-left border-collapse" id="tabla-maestra-inventario">
+                                <thead class="sticky top-0 bg-white z-10 shadow-sm">
+                                    <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-200">
+                                        <th class="p-4 font-black">Código QR</th>
+                                        <th class="p-4 font-black">Cliente</th>
+                                        <th class="p-4 font-black">Agente / Capacidad</th>
+                                        <th class="p-4 font-black">Ubicación</th>
+                                        <th class="p-4 font-black text-center">Estatus</th>
+                                        <th class="p-4 font-black text-center">Acción</th> 
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-inventario" class="text-sm font-medium divide-y divide-slate-100">
+                                    <tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">Cargando inventario...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sec-reportes" class="seccion-app hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                        <div><h2 class="text-2xl font-black text-slate-900">Últimas Evaluaciones</h2></div>
+                        <div class="flex gap-2">
+                            <button onclick="cargarReportes()" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2"><i class="ph-bold ph-arrows-clockwise"></i> Actualizar</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead><tr class="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-widest text-slate-500"><th class="p-4 font-black">Cliente / QR</th><th class="p-4 font-black">Extintor</th><th class="p-4 font-black">Dictamen</th><th class="p-4 font-black text-center">Firma / Foto</th></tr></thead>
+                                <tbody id="tabla-reportes" class="text-sm font-medium divide-y divide-slate-100"><tr><td colspan="4" class="p-8 text-center text-slate-400">Cargando...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+                <div id="sec-rutas" class="seccion-app hidden space-y-6">
+                    <div class="border-b border-slate-200 pb-4">
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Despacho de Rutas</h2>
+                        <p class="text-sm text-slate-500 font-medium">Asigna empresas a tus técnicos para su jornada laboral.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 col-span-1 h-fit">
+                            <h3 class="font-black text-slate-800 text-sm uppercase mb-4 flex items-center gap-2"><i class="ph-bold ph-plus-circle text-blue-600"></i> Nueva Ruta</h3>
+                            <form id="formRuta" onsubmit="event.preventDefault(); guardarRuta();" class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Técnico Asignado</label>
+                                    <select id="ruta-tecnico" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700" required>
+                                        <option value="">Selecciona un técnico...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Empresa / Cliente</label>
+                                    <select id="ruta-empresa" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700" required>
+                                        <option value="">Selecciona una empresa...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Fecha Programada</label>
+                                    <input type="date" id="ruta-fecha" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700" required>
+                                </div>
+                                <p id="msj-ruta" class="text-[11px] font-bold text-center"></p>
+                                <button type="submit" class="w-full bg-[#1e3a8a] text-white font-black py-3 rounded-xl hover:bg-[#0f172a] transition shadow-sm mt-2">ASIGNAR RUTA</button>
+                            </form>
+                        </div>
+
+                        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden col-span-2">
+                            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                <h3 class="font-black text-slate-800 text-sm uppercase">Agenda de Trabajo</h3>
+                                <button onclick="cargarRutas()" class="text-slate-500 hover:text-blue-600"><i class="ph-bold ph-arrows-clockwise text-lg"></i></button>
+                            </div>
+                            <div class="overflow-x-auto max-h-[60vh] custom-scrollbar">
+                                <table class="w-full text-left text-sm divide-y divide-slate-100">
+                                    <thead class="bg-white">
+                                        <tr class="text-[10px] uppercase tracking-widest text-slate-400">
+                                            <th class="p-4 font-black">Fecha</th>
+                                            <th class="p-4 font-black">Técnico</th>
+                                            <th class="p-4 font-black">Cliente Destino</th>
+                                            <th class="p-4 font-black text-center">Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-rutas">
+                                        <tr><td colspan="4" class="p-8 text-center text-slate-400">Cargando rutas...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sec-kanban" class="seccion-app hidden space-y-6">
+                    <div class="border-b border-slate-200 pb-4 flex justify-between items-end">
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Línea de Mantenimiento</h2>
+                            <p class="text-sm text-slate-500 font-medium">Gestiona los equipos que trajiste físicamente al taller.</p>
+                        </div>
+                        <button onclick="cargarKanban()" class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm"><i class="ph-bold ph-arrows-clockwise"></i> Refrescar</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                        
+                        <div class="bg-slate-100 rounded-2xl p-4 border border-slate-200 min-h-[50vh]">
+                            <h3 class="font-black text-slate-700 text-xs uppercase mb-4 flex items-center gap-2"><i class="ph-fill ph-download-simple text-blue-500 text-lg"></i> 1. Recibidos <span class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[9px]" id="count-recibidos">0</span></h3>
+                            <div id="col-recibidos" class="space-y-3">
+                                <!-- Tarjetas inyectadas por JS -->
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-100 rounded-2xl p-4 border border-slate-200 min-h-[50vh]">
+                            <h3 class="font-black text-slate-700 text-xs uppercase mb-4 flex items-center gap-2"><i class="ph-fill ph-wrench text-amber-500 text-lg"></i> 2. En Mantenimiento <span class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[9px]" id="count-proceso">0</span></h3>
+                            <div id="col-proceso" class="space-y-3"></div>
+                        </div>
+
+                        <div class="bg-slate-100 rounded-2xl p-4 border border-slate-200 min-h-[50vh]">
+                            <h3 class="font-black text-slate-700 text-xs uppercase mb-4 flex items-center gap-2"><i class="ph-fill ph-check-circle text-emerald-500 text-lg"></i> 3. Listos (Entrega) <span class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[9px]" id="count-listos">0</span></h3>
+                            <div id="col-listos" class="space-y-3"></div>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- ====== PEGA AQUÍ LA NUEVA SECCIÓN ====== -->
+                <div id="sec-configuracion" class="seccion-app hidden space-y-6">
+                    <div class="border-b border-slate-200 pb-4">
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Marca Blanca</h2>
+                        <p class="text-sm text-slate-500 font-medium">Personaliza la plataforma con la identidad visual de tu negocio.</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 max-w-xl">
+                        <h3 class="font-black text-slate-800 text-sm uppercase mb-4 flex items-center gap-2">
+                            <i class="ph-bold ph-image text-blue-600"></i> Logotipo del Taller
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Este logo aparecerá en el portal de tus clientes y en los dictámenes PDF que generes.</p>
+                        
+                        <form id="formLogo" onsubmit="event.preventDefault(); subirLogoTaller();" class="space-y-4">
+                            <div class="border-2 border-dashed border-slate-300 p-6 rounded-2xl text-center bg-slate-50 hover:bg-slate-100 transition relative">
+                                <input type="file" id="input-logo" accept="image/png, image/jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required onchange="document.getElementById('nombre-archivo').innerText = this.files[0].name">
+                                <i class="ph-bold ph-upload-simple text-3xl text-slate-400 mb-2"></i>
+                                <p class="text-sm font-bold text-slate-700">Haz clic para seleccionar tu logo</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase mt-1" id="nombre-archivo">JPG o PNG (Máx 2MB)</p>
+                            </div>
+                            
+                            <p id="msj-logo" class="text-xs font-bold text-center"></p>
+                            <button type="submit" id="btnGuardarLogo" class="w-full bg-[#1e3a8a] text-white font-black py-3 rounded-xl hover:bg-[#0f172a] transition shadow-sm flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-cloud-arrow-up"></i> SUBIR LOGOTIPO
+                            </button>
+                        </form>
+                    </div>
+                </div>
+        </main>
+    </div>
+
+    <div id="modal-extintor" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-slate-900">Registrar Extintor</h3>
+                <button onclick="cerrarModalExtintor()" class="text-slate-400 hover:text-red-500 transition"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form id="formExtintor" onsubmit="event.preventDefault(); guardarExtintor();" class="space-y-4">
+                
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Empresa / Cliente</label>
+                    <select id="reg-empresa" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-xs font-bold text-slate-700" required>
+                        <option value="">Selecciona el cliente...</option>
+                        </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mt-2">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Agente</label>
+                        <select id="reg-tipo" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-xs font-bold text-slate-700"><option value="PQS">PQS</option><option value="CO2">CO2</option><option value="Agua">Agua</option><option value="Espuma">Espuma</option></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Capacidad</label>
+                        <input type="text" id="reg-capacidad" placeholder="Ej: 4.5 KG" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-xs font-bold" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Ubicación</label>
+                    <input type="text" id="reg-ubicacion" placeholder="Ej: Pasillo Principal" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold" required>
+                </div>
+                <p id="mensaje-modal-extintor" class="text-xs font-bold text-center mt-2"></p>
+                <button type="submit" id="btnGuardarExtintor" class="w-full bg-[#1e3a8a] text-white font-black py-3 rounded-xl hover:bg-[#0f172a] transition shadow-sm mt-4">GENERAR ACTIVO</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-editar-extintor" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-xl font-black text-slate-900">Editar Equipo</h3>
+                <button onclick="cerrarModalEditar()" class="text-slate-400 hover:text-red-500 transition"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form id="formEditarExtintor" onsubmit="event.preventDefault(); guardarEdicionExtintor();" class="space-y-3">
+                <input type="hidden" id="edit-id">
+                
+                <div class="bg-slate-100 p-3 rounded-xl text-center mb-2">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Folio Asignado (No modificable)</p>
+                    <p id="edit-qr" class="text-lg font-black text-[#1e3a8a]"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Agente</label>
+                        <select id="edit-tipo" class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-xs font-bold text-slate-700"><option value="PQS">PQS</option><option value="CO2">CO2</option><option value="Agua">Agua</option><option value="Espuma AFFF">Espuma AFFF</option><option value="Halotron">Halotron</option><option value="Clase K">Clase K</option></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Capacidad</label>
+                        <input type="text" id="edit-capacidad" class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-xs font-bold" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Ubicación</label>
+                    <input type="text" id="edit-ubicacion" class="w-full p-2 border border-slate-200 rounded-xl bg-slate-50 text-sm font-bold" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 mt-2">
+                    <div class="col-span-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Año de Fabricación (Cilindro)</label>
+                        <input type="number" id="edit-ano" placeholder="Ej: 2024" class="w-full p-2 border border-slate-200 rounded-xl bg-white text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Último Mantenimiento</label>
+                        <input type="date" id="edit-ult-mant" class="w-full p-2 border border-slate-200 rounded-xl bg-white text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Próxima Recarga</label>
+                        <input type="date" id="edit-prox-rec" class="w-full p-2 border border-slate-200 rounded-xl bg-white text-xs font-bold">
+                    </div>
+                </div>
+
+                <p id="mensaje-edit-extintor" class="text-xs font-bold text-center mt-2"></p>
+                <button type="submit" id="btnGuardarEdicion" class="w-full bg-amber-500 text-slate-900 font-black py-3 rounded-xl hover:bg-amber-600 transition shadow-sm mt-2 flex items-center justify-center gap-2"><i class="ph-bold ph-arrows-clockwise"></i> ACTUALIZAR DATOS</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- MODAL IMPRIMIR QRS -->
+    <div id="modal-qrs" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-black text-xl text-slate-800">Imprimir QRs</h2>
+                <button onclick="cerrarModalQRs()" class="text-slate-400 hover:text-slate-800"><i class="ph-bold ph-x text-2xl"></i></button>
+            </div>
+            
+            <p id="qr-empresa-nombre" class="text-sm font-bold text-blue-600 mb-4 bg-blue-50 p-3 rounded-xl border border-blue-100">Cliente...</p>
+            <input type="hidden" id="qr-empresa-id">
+            
+            <p class="text-xs text-slate-500 mb-4">Puedes dejarlos en blanco para imprimir todos los equipos de la empresa.</p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Imprimir Desde el #</label>
+                    <input type="number" id="qr-desde" placeholder="Ej. 1" class="w-full border border-slate-200 p-3 rounded-xl font-bold outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Hasta el #</label>
+                    <input type="number" id="qr-hasta" placeholder="Ej. 50" class="w-full border border-slate-200 p-3 rounded-xl font-bold outline-none focus:border-blue-500">
+                </div>
+            </div>
+            
+            <button onclick="generarPDFQRs()" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 active:scale-95 transition">
+                <i class="ph-bold ph-printer"></i> GENERAR PDF
+            </button>
+        </div>
+    </div>
+    
+    
+    <!-- ======================================================= -->
+    <!-- PEGA EL CÓDIGO DEL MODAL DE COTIZACIÓN EXACTAMENTE AQUÍ -->
+    <!-- ======================================================= -->
+    <!-- MODAL COTIZACIÓN DETALLADA -->
+    <div id="modal-cotizacion" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-50 w-full max-w-3xl rounded-[2rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
+                <div>
+                    <h2 class="font-black text-xl">Armar Cotización</h2>
+                    <p id="cot-empresa-nombre" class="text-xs text-blue-300 font-bold uppercase tracking-widest mt-1">Cliente</p>
+                </div>
+                <button onclick="cerrarModalCotizacion()" class="text-slate-400 hover:text-white transition"><i class="ph-bold ph-x text-2xl"></i></button>
+            </div>
+            
+            <!-- NUEVO CAMPO: ATENCIÓN A -->
+            <div class="px-6 pt-4">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Atención a (Nombre del Encargado):</label>
+                <input type="text" id="cot-atencion-a" placeholder="Ej. Ing. Roberto Sánchez..." class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm">
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1">
+                <table class="w-full text-left border-collapse bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <thead class="bg-slate-100 text-[10px] uppercase tracking-widest text-slate-500">
+                        <tr>
+                            <th class="p-4 border-b border-slate-200">Equipo</th>
+                            <th class="p-4 border-b border-slate-200 w-40">Precio (MXN)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-cotizacion-detalles">
+                        <!-- JS inyecta las filas -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-6 bg-white border-t border-slate-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+                <div class="flex justify-end mb-4">
+                    <div class="w-64 space-y-2 text-sm font-bold text-slate-600">
+                        <div class="flex justify-between"><span>Subtotal:</span> <span id="cot-subtotal">$0.00</span></div>
+                        <div class="flex justify-between"><span>IVA (16%):</span> <span id="cot-iva">$0.00</span></div>
+                        <div class="flex justify-between text-xl font-black text-slate-900 border-t border-slate-200 pt-2"><span>Total:</span> <span id="cot-total">$0.00</span></div>
+                    </div>
+                </div>
+                <input type="hidden" id="cot-empresa-id">
+                <button onclick="guardarCotizacion()" id="btnGuardarCotizacion" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
+                    <i class="ph-bold ph-check-circle text-xl"></i> GUARDAR Y GENERAR PDF
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+
+    <!-- JUSTO ABAJO DE TU MODAL, COMIENZA EL SCRIPT QUE EDITAMOS ANTES -->
+    <script>
+        const tallerId = localStorage.getItem('taller_id') || 1;
+        document.getElementById('nombre-admin-sidebar').innerText = localStorage.getItem('usuario_nombre') || 'Dueño de Taller';
+
+        async function cerrarSesion() { 
+            try { 
+                // Le decimos al navegador que no use caché y que obligue la salida
+                await fetch('../api/logout.php', { cache: 'no-store' }); 
+            } catch(e) {
+                console.error("Error al contactar al servidor para salir.");
+            } finally {
+                // Pase lo que pase, limpiamos la memoria y redirigimos
+                localStorage.clear(); 
+                window.location.replace("../index.html"); 
+            }
+        } 
+        }
+
+        function cambiarSeccion(idSeccion, botonActivo) {
+            document.querySelectorAll('.seccion-app').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(idSeccion).classList.remove('hidden');
+            
+            document.querySelectorAll('.menu-btn').forEach(btn => {
+                btn.className = "menu-btn w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-bold text-sm transition";
+            });
+            botonActivo.className = "menu-btn w-full flex items-center gap-3 bg-[#1e3a8a] text-white px-4 py-3 rounded-xl font-bold text-sm shadow-sm transition";
+            document.getElementById('top-nav-title').innerText = botonActivo.innerText.trim();
+        }
+
+        async function cargarResumenClientes() {
+            try {
+                const res = await fetch(`../api/obtener_dashboard_admin.php?taller_id=${tallerId}`);
+                const data = await res.json();
+                
+                if (!data.error) {
+                    // KPIs
+                    document.getElementById('kpi-clientes').innerText = data.kpis.clientes || 0;
+                    document.getElementById('kpi-taller').innerText = data.kpis.taller || 0;
+                    document.getElementById('kpi-ventas').innerText = data.kpis.ventas || 0;
+
+                    // Resumen Clientes
+                    document.getElementById('tabla-resumen-clientes').innerHTML = data.resumen_clientes.map(c => `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="p-4 font-bold text-slate-700">${c.nombre_comercial}</td>
+                            <td class="p-4 text-center text-blue-600 font-black">${c.total_extintores} Extintores</td>
+                            <td class="p-4 text-center text-amber-600 font-black">${c.en_taller} en Taller</td>
+                            <td class="p-4 text-right flex justify-end gap-2">
+                            <button onclick="abrirModalQRs(${c.empresa_id}, '${c.nombre_comercial}')" class="text-[10px] bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 shadow-sm transition"><i class="ph-bold ph-qr-code"></i> IMPRIMIR QRs</button>                                
+                            <button onclick="descargarDictamenPDF(${c.empresa_id})" class="text-[10px] bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-slate-900 shadow-sm transition">DICTAMEN</button>
+                            </td>
+                        </tr>`).join('');
+
+                    // Cotizaciones Agrupadas (NUEVO BOTON COTIZAR)
+                    const tbodyCotizaciones = document.getElementById('tabla-cotizaciones');
+                    if (data.cotizaciones.length === 0) {
+                        tbodyCotizaciones.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-slate-400 font-bold">No hay equipos dañados pendientes de cotizar.</td></tr>';
+                    } else {
+                        tbodyCotizaciones.innerHTML = data.cotizaciones.map(cot => {
+                            return `
+                            <tr class="hover:bg-emerald-50 transition-colors border-b border-slate-100">
+                                <td class="p-4">
+                                    <span class="font-bold text-slate-800">${cot.nombre_comercial}</span><br>
+                                    <span class="text-[10px] text-slate-400 font-black tracking-widest">${cot.total_equipos} EQUIPO(S) DAÑADO(S)</span>
+                                </td>
+                                <td class="p-4 text-right w-40">
+                                    <button onclick="abrirModalCotizacion(${cot.empresa_id}, '${cot.nombre_comercial}')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm hover:bg-blue-700 transition w-full flex items-center justify-center gap-2">
+                                        <i class="ph-bold ph-calculator"></i> Cotizar
+                                    </button>
+                                </td>
+                            </tr>`;
+                        }).join('');
+                    }
+                }
+            } catch (err) { console.error("Error Dashboard", err); }
+        }
+
+        // ==========================================
+        // LÓGICA DE COTIZACIÓN DETALLADA
+        // ==========================================
+        async function abrirModalCotizacion(empresaId, nombreEmpresa) {
+            document.getElementById('cot-empresa-id').value = empresaId;
+            document.getElementById('cot-empresa-nombre').innerText = nombreEmpresa;
+            document.getElementById('cot-atencion-a').value = ''; // <-- AGREGAR ESTA LÍNEA
+            const tbody = document.getElementById('tbody-cotizacion-detalles');
+            
+            tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400 font-bold"><i class="ph-bold ph-spinner animate-spin text-2xl"></i></td></tr>';
+            document.getElementById('modal-cotizacion').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`../api/obtener_detalle_cotizacion.php?empresa_id=${empresaId}&taller_id=${tallerId}`);
+                const data = await res.json();
+                
+                if(!data.error && data.datos.length > 0) {
+                    tbody.innerHTML = data.datos.map(eq => `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="p-4">
+                                <span class="text-[10px] font-black uppercase text-slate-400 block">${eq.codigo_qr} | ${eq.estatus_final_extintor}</span>
+                                <span class="font-bold text-slate-700 text-sm">${eq.concepto}</span>
+                                <input type="hidden" class="input-cot-ext-id" value="${eq.extintor_id}">
+                                <input type="hidden" class="input-cot-concepto" value="${eq.concepto}">
+                            </td>
+                            <td class="p-4">
+                                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1 shadow-inner focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                                    <span class="text-slate-400 font-black">$</span>
+                                    <input type="number" class="input-cot-precio w-full py-2 outline-none text-sm font-black text-slate-800 bg-transparent text-right" placeholder="0.00" value="${eq.precio_sugerido}" onkeyup="recalcularTotales()" onchange="recalcularTotales()">
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                    recalcularTotales();
+                } else {
+                    cerrarModalCotizacion(); alert("No se encontraron equipos para cotizar.");
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function cerrarModalCotizacion() { document.getElementById('modal-cotizacion').classList.add('hidden'); }
+
+        function recalcularTotales() {
+            let subtotal = 0;
+            document.querySelectorAll('.input-cot-precio').forEach(input => {
+                let val = parseFloat(input.value);
+                if(!isNaN(val)) subtotal += val;
+            });
+            
+            let iva = subtotal * 0.16;
+            let total = subtotal + iva;
+
+            document.getElementById('cot-subtotal').innerText = "$" + subtotal.toFixed(2);
+            document.getElementById('cot-iva').innerText = "$" + iva.toFixed(2);
+            document.getElementById('cot-total').innerText = "$" + total.toFixed(2);
+        }
+
+        async function guardarCotizacion() {
+            const btn = document.getElementById('btnGuardarCotizacion');
+            const empresaId = document.getElementById('cot-empresa-id').value;
+            const atencionA = document.getElementById('cot-atencion-a').value.trim(); // <-- NUEVO
+            
+            let detalles = [];
+            let subtotal = 0;
+            
+            const filas = document.querySelectorAll('#tbody-cotizacion-detalles tr');
+            filas.forEach(fila => {
+                const extintorId = fila.querySelector('.input-cot-ext-id').value;
+                const concepto = fila.querySelector('.input-cot-concepto').value;
+                const precio = parseFloat(fila.querySelector('.input-cot-precio').value) || 0;
+                
+                if(precio > 0) {
+                    detalles.push({ extintor_id: extintorId, concepto: concepto, precio: precio });
+                    subtotal += precio;
+                }
+            });
+
+            if(detalles.length === 0) {
+                alert("⚠️ Debes asignarle precio a por lo menos un equipo para cotizar.");
+                return;
+            }
+
+            let iva = subtotal * 0.16;
+            let total = subtotal + iva;
+
+            const payload = {
+                taller_id: tallerId,
+                empresa_id: empresaId,
+                atencion_a: atencionA, // <-- NUEVO
+                subtotal: subtotal,
+                iva: iva,
+                total: total,
+                detalles: detalles
+            };
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-xl"></i> GUARDANDO...';
+
+            try {
+                // 3. Mandar a la Base de Datos
+                const res = await fetch('../api/guardar_cotizacion.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if(!data.error) {
+                    cerrarModalCotizacion();
+                    cargarResumenClientes(); // Refrescar el panel
+                    
+                    // 4. Mágia: Abrir el PDF Corporativo
+                    window.open(`../api/generar_cotizacion.php?id=${data.cotizacion_id}`, '_blank');
+                } else {
+                    alert(data.mensaje);
+                }
+            } catch(e) {
+                alert("Error de conexión al guardar.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph-bold ph-check-circle text-xl"></i> GUARDAR Y GENERAR PDF';
+            }
+        }
+
+        function descargarDictamenPDF(empresaId) {
+            window.open(`../api/generar_dictamen.php?empresa_id=${empresaId}`, '_blank');
+        }
+
+        // ==========================================
+        // RESTO DE FUNCIONES DEL PANEL
+        // ==========================================
+        async function guardarEmpresa() {
+            const btn = document.getElementById('btnGuardarEmpresa'); 
+            const msj = document.getElementById('msj-empresa');
+            const nombreEmpresa = document.getElementById('reg-empresa-nombre').value.trim();
+            const direccionEmpresa = document.getElementById('reg-empresa-direccion').value.trim();
+            const tienePoliza = document.getElementById('reg-empresa-poliza').checked ? 1 : 0;
+
+            if (!nombreEmpresa) { msj.innerText = "El nombre es obligatorio."; msj.style.color = "red"; return; }
+            if(btn) { btn.disabled = true; btn.innerHTML = 'Guardando...'; }
+
+            const payload = { nombre_comercial: nombreEmpresa, direccion: direccionEmpresa, taller_id: tallerId, tiene_poliza: tienePoliza };
+
+            try {
+                const res = await fetch('../api/crear_empresa.php', { method: 'POST', body: JSON.stringify(payload) });
+                const data = await res.json();
+                if(!data.error) {
+                    msj.innerText = data.mensaje; msj.style.color = "green";
+                    document.getElementById('formEmpresa').reset();
+                    cargarListasAdmin(); 
+                } else { msj.innerText = data.mensaje; msj.style.color = "red"; }
+            } catch(e) { msj.innerText = "Error de red al crear empresa."; msj.style.color = "red"; } 
+            finally { if(btn) { btn.disabled = false; btn.innerHTML = 'REGISTRAR EMPRESA'; } }
+        }
+
+        let catalogosGlobales = { tecnicos: [], empresas: [] };
+
+        async function cargarListasAdmin() {
+            try {
+                const res = await fetch(`../api/obtener_catalogos.php?taller_id=${tallerId}`);
+                const data = await res.json();
+                
+                if(!data.error) {
+                    catalogosGlobales = data; 
+                    document.getElementById('tabla-tecnicos-admin').innerHTML = data.tecnicos.map(t => `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="p-3"><span class="font-bold text-slate-700 block">${t.nombre}</span><span class="text-[10px] text-slate-400 font-medium">${t.email}</span></td>
+                            <td class="p-3 text-right flex justify-end gap-1">
+                                <button onclick="abrirEdicionTecnico(${t.id})" class="text-blue-600 bg-blue-50 p-2 rounded-lg hover:bg-blue-100"><i class="ph-bold ph-pencil-simple"></i></button>
+                                <button onclick="eliminarTecnico(${t.id})" class="text-red-600 bg-red-50 p-2 rounded-lg hover:bg-red-100"><i class="ph-bold ph-trash"></i></button>
+                            </td>
+                        </tr>`).join('');
+                        
+                    document.getElementById('tabla-empresas-admin').innerHTML = data.empresas.map(e => `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="p-3 font-bold text-slate-700">${e.nombre_comercial} ${e.tiene_poliza == 1 ? '<br><span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full inline-block mt-1">Con Póliza</span>' : ''}</td>
+                            <td class="p-3 text-right flex justify-end gap-1">
+                                <button onclick="abrirEdicionEmpresa(${e.id})" class="text-emerald-600 bg-emerald-50 p-2 rounded-lg hover:bg-emerald-100"><i class="ph-bold ph-pencil-simple"></i></button>
+                                <button onclick="eliminarEmpresa(${e.id})" class="text-red-600 bg-red-50 p-2 rounded-lg hover:bg-red-100"><i class="ph-bold ph-trash"></i></button>
+                            </td>
+                        </tr>`).join('');
+                    
+                    const selectRegEmpresa = document.getElementById('reg-empresa');
+                    if(selectRegEmpresa) selectRegEmpresa.innerHTML = '<option value="">Selecciona el cliente...</option>' + data.empresas.map(e => `<option value="${e.id}">${e.nombre_comercial}</option>`).join('');
+
+                    const selectRutaTecnico = document.getElementById('ruta-tecnico');
+                    const selectRutaEmpresa = document.getElementById('ruta-empresa');
+                    if(selectRutaTecnico && selectRutaEmpresa) {
+                        selectRutaTecnico.innerHTML = data.tecnicos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+                        selectRutaEmpresa.innerHTML = '<option value="">Selecciona una empresa...</option>' + data.empresas.map(e => `<option value="${e.id}">${e.nombre_comercial}</option>`).join('');
+                    }
+                }
+            } catch (err) {}
+        }
+
+        function abrirEdicionTecnico(id) {
+            const tec = catalogosGlobales.tecnicos.find(t => t.id === id);
+            if(!tec) return;
+            document.getElementById('edit-tec-id').value = tec.id;
+            document.getElementById('edit-tec-nombre').value = tec.nombre;
+            document.getElementById('edit-tec-email').value = tec.email;
+            document.getElementById('edit-tec-pass').value = ''; 
+            document.getElementById('modal-editar-tecnico').classList.remove('hidden');
+        }
+
+        async function enviarEdicionTecnico() {
+            const msj = document.getElementById('msj-edit-tec');
+            const payload = { id: document.getElementById('edit-tec-id').value, nombre: document.getElementById('edit-tec-nombre').value, email: document.getElementById('edit-tec-email').value, password: document.getElementById('edit-tec-pass').value };
+            try {
+                const res = await fetch('../api/editar_tecnico.php', { method: 'POST', body: JSON.stringify(payload) });
+                const data = await res.json();
+                if(!data.error) { cargarListasAdmin(); document.getElementById('modal-editar-tecnico').classList.add('hidden'); } else { msj.innerText = data.mensaje; msj.style.color = "red"; }
+            } catch(e) { msj.innerText = "Error de red"; }
+        }
+
+        function abrirEdicionEmpresa(id) {
+            const emp = catalogosGlobales.empresas.find(e => e.id === id);
+            if(!emp) return;
+            document.getElementById('edit-emp-id').value = emp.id;
+            document.getElementById('edit-emp-nombre').value = emp.nombre_comercial;
+            document.getElementById('edit-emp-poliza').checked = (emp.tiene_poliza == 1);
+            document.getElementById('modal-editar-empresa').classList.remove('hidden');
+        }
+
+        async function enviarEdicionEmpresa() {
+            const msj = document.getElementById('msj-edit-emp');
+            const payload = { id: document.getElementById('edit-emp-id').value, nombre_comercial: document.getElementById('edit-emp-nombre').value, tiene_poliza: document.getElementById('edit-emp-poliza').checked ? 1 : 0 };
+            try {
+                const res = await fetch('../api/editar_empresa.php', { method: 'POST', body: JSON.stringify(payload) });
+                const data = await res.json();
+                if(!data.error) { cargarListasAdmin(); cargarAlertas(); document.getElementById('modal-editar-empresa').classList.add('hidden'); } else { msj.innerText = data.mensaje; msj.style.color = "red"; }
+            } catch(e) { msj.innerText = "Error de red"; }
+        }
+
+        async function registrarTecnico() {
+            await fetch('../api/crear_tecnico.php', { method: 'POST', body: JSON.stringify({ nombre: document.getElementById('tec_nombre').value, correo: document.getElementById('tec_correo').value, contrasena: document.getElementById('tec_password').value, taller_id: tallerId }) });
+            document.getElementById('formAltaTecnico').reset(); cargarListasAdmin();
+        }
+        
+        async function eliminarTecnico(id) {
+            if(!confirm("¿Dar de baja a este técnico?")) return;
+            try {
+                const res = await fetch('../api/eliminar_tecnico.php', { method: 'POST', body: JSON.stringify({ id: id }) });
+                const data = await res.json();
+                if(!data.error) { cargarListasAdmin(); } else { alert(data.mensaje); }
+            } catch(e) { alert("Error al eliminar."); }
+        }
+
+        async function eliminarEmpresa(id) {
+            if(!confirm("¿Dar de baja a este cliente?")) return;
+            try {
+                const res = await fetch('../api/eliminar_empresa.php', { method: 'POST', body: JSON.stringify({ id: id }) });
+                const data = await res.json();
+                if(!data.error) { cargarListasAdmin(); cargarAlertas(); } else { alert(data.mensaje); }
+            } catch(e) { alert("Error al eliminar."); }
+        }
+
+        function abrirModalExtintor() { document.getElementById('modal-extintor').classList.remove('hidden'); }
+        function cerrarModalExtintor() { document.getElementById('modal-extintor').classList.add('hidden'); document.getElementById('formExtintor').reset(); }
+
+        async function guardarExtintor() {
+            const btn = document.getElementById('btnGuardarExtintor');
+            const msj = document.getElementById('mensaje-modal-extintor');
+            btn.disabled = true; btn.innerHTML = "Guardando..."; msj.innerText = "";
+            const payload = { empresa_id: document.getElementById('reg-empresa').value, tipo_agente: document.getElementById('reg-tipo').value, capacidad: document.getElementById('reg-capacidad').value, ubicacion_especifica: document.getElementById('reg-ubicacion').value };
+            try {
+                const res = await fetch('../api/registrar_extintor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (data.error) { msj.innerText = data.mensaje; msj.style.color = "red"; } 
+                else { msj.innerText = data.mensaje; msj.style.color = "green"; cargarInventario(); setTimeout(cerrarModalExtintor, 2000); }
+            } catch (err) { msj.innerText = "Error de conexión."; msj.style.color = "red"; } 
+            finally { btn.disabled = false; btn.innerHTML = "GENERAR ACTIVO"; }
+        }
+
+        async function cargarReportes() {
+            const tbody = document.getElementById('tabla-reportes');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Buscando reportes...</td></tr>';
+            try {
+                const respuesta = await fetch(`../api/obtener_reportes.php?taller_id=${tallerId}`);
+                const data = await respuesta.json();
+                if (data.error || data.datos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center font-bold text-slate-400">No hay inspecciones.</td></tr>'; return;
+                }
+                tbody.innerHTML = data.datos.map(item => {
+                    let badge = item.estatus_final_extintor === 'Aprobado' ? "bg-emerald-100 text-emerald-700" : (item.estatus_final_extintor === 'Condicionado' ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700");
+                    return `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="p-4"><span class="font-bold text-slate-800">${item.nombre_comercial || 'Cliente'}</span><br><span class="text-[10px] text-slate-500 uppercase tracking-widest">${item.codigo_qr}</span></td>
+                            <td class="p-4 text-xs"><span class="block font-bold">${item.tipo_agente}</span><span class="text-slate-500">${item.capacidad}</span></td>
+                            <td class="p-4"><span class="${badge} px-3 py-1 rounded text-[10px] font-black uppercase">${item.estatus_final_extintor}</span></td>
+                            <td class="p-4 text-center">N/A</td>
+                        </tr>`;
+                }).join('');
+            } catch (error) {}
+        }
+
+        let inventarioGlobal = [];
+
+        async function cargarInventario() {
+            try {
+                const res = await fetch(`../api/obtener_inventario.php?taller_id=${tallerId}`);
+                const data = await res.json();
+                const tbody = document.getElementById('tbody-inventario');
+                if(!tbody) return; 
+                
+                if (data.error || data.datos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">No hay extintores.</td></tr>'; return;
+                }
+                inventarioGlobal = data.datos;
+                
+                tbody.innerHTML = inventarioGlobal.map(ext => {
+                    let colorEstatus = ext.estatus === 'Operativo' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50';
+                    return `
+                    <tr class="hover:bg-slate-50 fila-inventario transition-colors border-b border-slate-100">
+                        <td class="p-4 font-black text-slate-800 qr-text whitespace-nowrap">${ext.codigo_qr}</td>
+                        <td class="p-4 font-bold text-blue-800 cliente-text">${ext.cliente}</td>
+                        <td class="p-4 text-xs font-bold text-slate-600 whitespace-nowrap">${ext.tipo_agente} - ${ext.capacidad}</td>
+                        <td class="p-4 text-xs text-slate-500">${ext.ubicacion_especifica || 'General'}</td>
+                        <td class="p-4 text-center"><span class="${colorEstatus} px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider">${ext.estatus}</span><br><span class="text-[9px] text-slate-400 font-bold">${ext.etapa_taller}</span></td>
+                        <td class="p-4 text-center"><button onclick="abrirModalEditar(${ext.id})" class="bg-amber-100 text-amber-700 p-2 rounded-lg hover:bg-amber-200 transition shadow-sm"><i class="ph-bold ph-pencil-simple text-lg"></i></button></td>
+                    </tr>`;
+                }).join('');
+            } catch (error) {}
+        }
+
+        function abrirModalEditar(id) {
+            const equipo = inventarioGlobal.find(e => e.id === id);
+            if(!equipo) return;
+            document.getElementById('edit-id').value = equipo.id; document.getElementById('edit-qr').innerText = equipo.codigo_qr;
+            document.getElementById('edit-tipo').value = equipo.tipo_agente; document.getElementById('edit-capacidad').value = equipo.capacidad;
+            document.getElementById('edit-ubicacion').value = equipo.ubicacion_especifica; document.getElementById('edit-ano').value = equipo.ano_fabricacion || '';
+            document.getElementById('edit-ult-mant').value = equipo.ultimo_mantenimiento || ''; document.getElementById('edit-prox-rec').value = equipo.proxima_recarga || '';
+            document.getElementById('modal-editar-extintor').classList.remove('hidden');
+        }
+
+        function cerrarModalEditar() { document.getElementById('modal-editar-extintor').classList.add('hidden'); document.getElementById('formEditarExtintor').reset(); document.getElementById('mensaje-edit-extintor').innerText = ''; }
+
+        async function guardarEdicionExtintor() {
+            const btn = document.getElementById('btnGuardarEdicion'); const msj = document.getElementById('mensaje-edit-extintor');
+            btn.disabled = true; btn.innerHTML = "Actualizando..."; msj.innerText = "";
+            const payload = { id: document.getElementById('edit-id').value, tipo_agente: document.getElementById('edit-tipo').value, capacidad: document.getElementById('edit-capacidad').value, ubicacion_especifica: document.getElementById('edit-ubicacion').value, ano_fabricacion: document.getElementById('edit-ano').value, ultimo_mantenimiento: document.getElementById('edit-ult-mant').value, proxima_recarga: document.getElementById('edit-prox-rec').value };
+            try {
+                const res = await fetch('../api/editar_extintor.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (data.error) { msj.innerText = data.mensaje; msj.style.color = "red"; } 
+                else { msj.innerText = data.mensaje; msj.style.color = "green"; cargarInventario(); setTimeout(cerrarModalEditar, 1500); }
+            } catch (err) { msj.innerText = "Error"; msj.style.color = "red"; } finally { btn.disabled = false; btn.innerHTML = 'ACTUALIZAR DATOS'; }
+        }
+
+        function filtrarInventario() {
+            const filtro = document.getElementById('buscador-inventario').value.toLowerCase();
+            const filas = document.querySelectorAll('.fila-inventario');
+            filas.forEach(fila => {
+                const textoQR = fila.querySelector('.qr-text').innerText.toLowerCase();
+                const textoCliente = fila.querySelector('.cliente-text').innerText.toLowerCase();
+                if (textoQR.includes(filtro) || textoCliente.includes(filtro)) { fila.style.display = ''; } else { fila.style.display = 'none'; }
+            });
+        }
+
+        async function guardarRuta() {
+            const msj = document.getElementById('msj-ruta');
+            const selectTecnicos = document.getElementById('ruta-tecnico');
+            const tecnicosSeleccionados = Array.from(selectTecnicos.selectedOptions).map(opt => opt.value);
+            if(tecnicosSeleccionados.length === 0) { msj.innerText = "Selecciona técnico."; msj.style.color = "red"; return; }
+            const payload = { taller_id: tallerId, tecnicos: tecnicosSeleccionados, empresa_id: document.getElementById('ruta-empresa').value, fecha: document.getElementById('ruta-fecha').value };
+            try {
+                const res = await fetch('../api/crear_ruta.php', { method: 'POST', body: JSON.stringify(payload) });
+                const data = await res.json();
+                if(!data.error) { msj.innerText = data.mensaje; msj.style.color = "green"; document.getElementById('formRuta').reset(); cargarRutas(); } else { msj.innerText = data.mensaje; msj.style.color = "red"; }
+            } catch(e) { msj.innerText = "Error de red."; msj.style.color = "red"; }
+        }
+
+        async function cargarRutas() {
+            try {
+                const res = await fetch(`../api/obtener_rutas.php?taller_id=${tallerId}`);
+                const data = await res.json();
+                const tbody = document.getElementById('tabla-rutas');
+                if (data.error || data.datos.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">No hay rutas programadas.</td></tr>'; return; }
+                tbody.innerHTML = data.datos.map(r => {
+                    let colorClase = "bg-amber-100 text-amber-700";
+                    if (r.estatus === 'En Proceso') colorClase = "bg-blue-100 text-blue-700";
+                    if (r.estatus === 'Terminada') colorClase = "bg-emerald-100 text-emerald-700";
+                    let selectEstatus = `<select onchange="cambiarEstatusRuta(${r.id}, this.value)" class="${colorClase} px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider outline-none cursor-pointer text-center w-full"><option value="Pendiente" ${r.estatus === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="En Proceso" ${r.estatus === 'En Proceso' ? 'selected' : ''}>En Proceso</option><option value="Terminada" ${r.estatus === 'Terminada' ? 'selected' : ''}>Terminada</option></select>`;
+                    return `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors"><td class="p-4 font-bold text-slate-600">${r.fecha_programada}</td><td class="p-4 font-black text-slate-800">${r.tecnico}</td><td class="p-4 font-bold text-blue-800">${r.empresa}</td><td class="p-4 text-center w-32">${selectEstatus}</td></tr>`;
+                }).join('');
+            } catch (err) {}
+        }
+
+        async function cambiarEstatusRuta(rutaId, nuevoEstatus) {
+            try {
+                const res = await fetch('../api/actualizar_ruta.php', { method: 'POST', body: JSON.stringify({ ruta_id: rutaId, nuevo_estatus: nuevoEstatus }) });
+                const data = await res.json();
+                if (!data.error) { cargarRutas(); } else { alert("Error al actualizar: " + data.mensaje); }
+            } catch (e) {}
+        }
+
+        async function cargarKanban() {
+            try {
+                const res = await fetch(`../api/obtener_kanban.php?taller_id=${tallerId}`);
+                const data = await res.json();
+                const colRecibidos = document.getElementById('col-recibidos'); const colProceso = document.getElementById('col-proceso'); const colListos = document.getElementById('col-listos');
+                colRecibidos.innerHTML = ''; colProceso.innerHTML = ''; colListos.innerHTML = '';
+                let contR = 0, contP = 0, contL = 0;
+
+                if(!data.error && data.datos.length > 0) {
+                    data.datos.forEach(eq => {
+                        let botones = '';
+                        if(eq.etapa_taller === 'Recibido') { botones = `<button onclick="moverKanban(${eq.id}, 'En Proceso')" class="w-full mt-2 bg-amber-500 text-white text-[10px] font-bold py-1.5 rounded-lg">INICIAR SERVICIO ➔</button>`; contR++; } 
+                        else if(eq.etapa_taller === 'En Proceso') { botones = `<button onclick="moverKanban(${eq.id}, 'Listo')" class="w-full mt-2 bg-emerald-500 text-white text-[10px] font-bold py-1.5 rounded-lg">MARCAR COMO LISTO ➔</button>`; contP++; } 
+                        else if(eq.etapa_taller === 'Listo') { botones = `<button onclick="moverKanban(${eq.id}, 'En Planta')" class="w-full mt-2 bg-blue-600 text-white text-[10px] font-bold py-1.5 rounded-lg">ENVIAR A CLIENTE</button>`; contL++; }
+
+                        const tarjetaHTML = `<div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200"><div class="flex justify-between items-start mb-1"><span class="text-[9px] font-black uppercase tracking-widest text-slate-400">${eq.codigo_qr}</span><span class="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 rounded">${eq.tipo_agente} ${eq.capacidad}</span></div><h4 class="text-xs font-black text-slate-800 truncate">${eq.nombre_comercial}</h4>${botones}</div>`;
+
+                        if(eq.etapa_taller === 'Recibido') colRecibidos.innerHTML += tarjetaHTML; else if(eq.etapa_taller === 'En Proceso') colProceso.innerHTML += tarjetaHTML; else if(eq.etapa_taller === 'Listo') colListos.innerHTML += tarjetaHTML;
+                    });
+                } else { colRecibidos.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">No hay equipos</p>'; }
+
+                document.getElementById('count-recibidos').innerText = contR; document.getElementById('count-proceso').innerText = contP; document.getElementById('count-listos').innerText = contL;
+            } catch (err) {}
+        }
+
+        async function moverKanban(extintorId, nuevaEtapa) {
+            try { await fetch('../api/actualizar_kanban.php', { method: 'POST', body: JSON.stringify({ extintor_id: extintorId, nueva_etapa: nuevaEtapa }) }); cargarKanban(); cargarResumenClientes(); } catch (e) {}
+        }
+
+        async function cargarAlertas() {
+            try {
+                const res = await fetch(`../api/obtener_alertas.php?taller_id=${tallerId}`);
+                const data = await res.json();
+                const tbody = document.getElementById('tabla-alertas');
+                if (data.error || data.datos.length === 0) { tbody.innerHTML = '<tr><td class="p-6 text-center text-emerald-600 font-black">¡Todo al día! Ningún equipo caduca pronto.</td></tr>'; return; }
+                
+                tbody.innerHTML = data.datos.map(alerta => {
+                    let badgeFecha = alerta.dias_restantes < 0 ? `<span class="bg-red-600 text-white px-2 py-1 rounded-md text-[9px] font-black uppercase">Vencido</span>` : `<span class="bg-amber-500 text-white px-2 py-1 rounded-md text-[9px] font-black uppercase">Próximo a Vencer</span>`;
+                    return `<tr class="hover:bg-red-50/50 transition-colors border-b border-red-50"><td class="p-3"><span class="font-black text-slate-800 text-sm">${alerta.cliente}</span><br><span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 inline-block">${alerta.codigo_qr} | ${alerta.tipo_agente} ${alerta.capacidad}</span></td><td class="p-3 text-right">${badgeFecha}<br><span class="text-[9px] text-slate-400 font-bold mt-1 block">Vencimiento: ${alerta.proxima_recarga}</span></td><td class="p-3 text-center"><button onclick="prepararRutaParaMantenimiento(${alerta.empresa_id})" class="bg-blue-600 text-white px-3 py-2 rounded-xl font-bold hover:bg-blue-700 text-[10px] uppercase mx-auto">Agendar Ruta</button></td></tr>`;
+                }).join('');
+            } catch (err) {}
+        }
+
+        function prepararRutaParaMantenimiento(empresaId) {
+            const botonRutas = Array.from(document.querySelectorAll('.menu-btn')).find(btn => btn.innerText.includes('Despacho'));
+            if(botonRutas) cambiarSeccion('sec-rutas', botonRutas);
+            const selectEmpresa = document.getElementById('ruta-empresa');
+            if(selectEmpresa) { selectEmpresa.value = empresaId; }
+        }
+
+        // CARGA INICIAL
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarResumenClientes(); cargarListasAdmin(); cargarReportes(); cargarInventario(); cargarAlertas(); cargarRutas(); cargarKanban();
+        });
+        
+        
+        
+        function abrirModalQRs(empresaId, nombreEmpresa) {
+            document.getElementById('qr-empresa-id').value = empresaId;
+            document.getElementById('qr-empresa-nombre').innerText = nombreEmpresa;
+            document.getElementById('qr-desde').value = '';
+            document.getElementById('qr-hasta').value = '';
+            document.getElementById('modal-qrs').classList.remove('hidden');
+        }
+
+        function cerrarModalQRs() {
+            document.getElementById('modal-qrs').classList.add('hidden');
+        }
+
+        function generarPDFQRs() {
+            const id = document.getElementById('qr-empresa-id').value;
+            const desde = document.getElementById('qr-desde').value;
+            const hasta = document.getElementById('qr-hasta').value;
+            let url = `../api/generar_etiquetas.php?empresa_id=${id}`;
+            if(desde) url += `&desde=${desde}`;
+            if(hasta) url += `&hasta=${hasta}`;
+            window.open(url, '_blank');
+            cerrarModalQRs();
+        }
+    </script>
+        
+
+    <!-- ==========================================
+         MODAL: EDITAR TÉCNICO
+         ========================================== -->
+    <div id="modal-editar-tecnico" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-black text-slate-900">Editar Técnico</h3>
+                <button onclick="document.getElementById('modal-editar-tecnico').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form id="formEditarTecnico" onsubmit="event.preventDefault(); enviarEdicionTecnico();" class="space-y-4">
+                <input type="hidden" id="edit-tec-id">
+                <input type="text" id="edit-tec-nombre" placeholder="Nombre completo" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" required>
+                <input type="email" id="edit-tec-email" placeholder="Correo electrónico" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" required>
+                <input type="password" id="edit-tec-pass" placeholder="Nueva Contraseña (Opcional)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold">
+                <p id="msj-edit-tec" class="text-[11px] font-bold text-center"></p>
+                <button type="submit" id="btnGuardarEditTec" class="w-full bg-[#1e3a8a] text-white font-black py-3 rounded-xl hover:bg-blue-900 transition">ACTUALIZAR TÉCNICO</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: EDITAR EMPRESA
+         ========================================== -->
+    <div id="modal-editar-empresa" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-black text-slate-900">Editar Empresa</h3>
+                <button onclick="document.getElementById('modal-editar-empresa').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form id="formEditarEmpresa" onsubmit="event.preventDefault(); enviarEdicionEmpresa();" class="space-y-4">
+                <input type="hidden" id="edit-emp-id">
+                <input type="text" id="edit-emp-nombre" placeholder="Nombre Comercial" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" required>
+                <label class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer hover:bg-blue-100 transition">
+                    <input type="checkbox" id="edit-emp-poliza" class="w-5 h-5 text-blue-600 rounded cursor-pointer">
+                    <span class="text-xs font-black text-blue-900 uppercase">Tiene Póliza Activa</span>
+                </label>
+                <p id="msj-edit-emp" class="text-[11px] font-bold text-center"></p>
+                <button type="submit" id="btnGuardarEditEmp" class="w-full bg-[#10b981] text-white font-black py-3 rounded-xl hover:bg-emerald-600 transition">ACTUALIZAR EMPRESA</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- MODAL COTIZACIÓN DETALLADA -->
+    <div id="modal-cotizacion" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-50 w-full max-w-3xl rounded-[2rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
+                <div>
+                    <h2 class="font-black text-xl">Armar Cotización</h2>
+                    <p id="cot-empresa-nombre" class="text-xs text-blue-300 font-bold uppercase tracking-widest mt-1">Cliente</p>
+                </div>
+                <button onclick="cerrarModalCotizacion()" class="text-slate-400 hover:text-white transition"><i class="ph-bold ph-x text-2xl"></i></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1">
+                <table class="w-full text-left border-collapse bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <thead class="bg-slate-100 text-[10px] uppercase tracking-widest text-slate-500">
+                        <tr>
+                            <th class="p-4 border-b border-slate-200">Equipo</th>
+                            <th class="p-4 border-b border-slate-200 w-40">Precio (MXN)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-cotizacion-detalles">
+                        <!-- JS inyecta las filas -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-6 bg-white border-t border-slate-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+                <div class="flex justify-end mb-4">
+                    <div class="w-64 space-y-2 text-sm font-bold text-slate-600">
+                        <div class="flex justify-between"><span>Subtotal:</span> <span id="cot-subtotal">$0.00</span></div>
+                        <div class="flex justify-between"><span>IVA (16%):</span> <span id="cot-iva">$0.00</span></div>
+                        <div class="flex justify-between text-xl font-black text-slate-900 border-t border-slate-200 pt-2"><span>Total:</span> <span id="cot-total">$0.00</span></div>
+                    </div>
+                </div>
+                <input type="hidden" id="cot-empresa-id">
+                <button onclick="guardarCotizacion()" id="btnGuardarCotizacion" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
+                    <i class="ph-bold ph-check-circle text-xl"></i> GUARDAR Y GENERAR PDF
+                </button>
+            </div>
+        </div>
+    </div>
+    
+        
+</body>
+</html>
